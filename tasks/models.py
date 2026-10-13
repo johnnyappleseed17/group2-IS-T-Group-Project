@@ -1,6 +1,12 @@
+from datetime import timedelta
+
 from django.conf import settings
-from django.db import models
 from django.core.validators import MinValueValidator
+from django.db import models
+from django.utils import timezone
+
+# A task counts as "due soon" (yellow) when it is due within this many days.
+DUE_SOON_DAYS = 3
 
 
 class Category(models.Model):
@@ -48,6 +54,57 @@ class Task(models.Model):
 
     def __str__(self):
         return self.title
+
+    # ---- Helpers: worked out when needed, not stored in the database ----
+
+    @property
+    def claimed_count(self):
+        """How many people have claimed this task."""
+        return self.assignments.count()
+
+    @property
+    def spots_left(self):
+        """How many more people the task still needs (never below 0)."""
+        return max(self.employees_needed - self.claimed_count, 0)
+
+    @property
+    def is_full(self):
+        return self.spots_left == 0
+
+    @property
+    def is_finished(self):
+        """Finished if someone marked the whole task complete, or if everyone
+        who claimed it has marked their part done."""
+        if self.completed_at is not None:
+            return True
+        claims = self.assignments.all()
+        return claims.exists() and not claims.filter(completed_at__isnull=True).exists()
+
+    @property
+    def status(self):
+        """'finished', 'claimed' (at least one person), or 'unclaimed'."""
+        if self.is_finished:
+            return "finished"
+        if self.claimed_count > 0:
+            return "claimed"
+        return "unclaimed"
+
+    @property
+    def is_overdue(self):
+        return not self.is_finished and self.due_date < timezone.localdate()
+
+    @property
+    def due_color(self):
+        """'red' = overdue, 'yellow' = due soon, 'green' = plenty of time,
+        'done' = finished (no deadline color needed)."""
+        if self.is_finished:
+            return "done"
+        today = timezone.localdate()
+        if self.due_date < today:
+            return "red"
+        if self.due_date <= today + timedelta(days=DUE_SOON_DAYS):
+            return "yellow"
+        return "green"
 
 
 class TaskAssignment(models.Model):
