@@ -8,5 +8,10 @@
  <h1>Please Be Base</h1><br>
 
   <button> <a  href="{% url 'index' %}">Back</a> </button>
+
+ <form action="{% url 'logout' %}" method="post">
+     {% csrf_token %}
+     <button type="submit">Log out</button>
+ </form>
  </body>
 </html>

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+
+{% block title %}Create an Account{% endblock %}
+
+
+{% block content %}
+    <form method="POST" class="form-group">
+   {% csrf_token %}
+
+   {{ form.as_p }}
+   <button type="submit" class="btn btn-success">Register</button>
+
+    </form>
+
+    <p><strong>Already have an account?</strong>
+          <a href="{% url 'login' %}"> Login Now</a>
+    </p>
+{% endblock %}
+</html>
