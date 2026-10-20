@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>My Created Tasks</title>
+</head>
+<body>
+    <header>
+        <nav aria-label="Main navigation">
+            <a href="{% url 'base' %}">Home</a>
+        </nav>
+        <p>Signed in as {{ user.get_username }}</p>
+        <form action="{% url 'logout' %}" method="post">
+            {% csrf_token %}
+            <button type="submit">Log out</button>
+        </form>
+    </header>
+
+    <main>
+        <h1>My Created Tasks</h1>
+        {% if tasks %}
+        <table>
+            <caption>Tasks you created, ordered by due date.</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Task</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Due date</th>
+                    <th scope="col">Categories</th>
+                    <th scope="col">People assigned / needed</th>
+                    <th scope="col">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in tasks %}
+                <tr>
+                    <th scope="row">{{ task.title }}</th>
+                    <td>{{ task.description|linebreaksbr }}</td>
+                    <td><time datetime="{{ task.due_date|date:'Y-m-d' }}">{{ task.due_date|date:"Y-m-d" }}</time></td>
+                    <td>{% for category in task.categories.all %}{{ category.name }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</td>
+                    <td>{{ task.claimed_count }} / {{ task.employees_needed }}</td>
+                    <td>{{ task.status|capfirst }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>You haven't created any tasks yet.</p>
+        {% endif %}
+    </main>
+</body>
+</html>

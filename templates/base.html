@@ -7,6 +7,10 @@
 
  <h1>Please Be Base</h1><br>
 
+ {% if user.is_authenticated and user.profile.is_approved and user.profile.role == "manager" %}
+ <p><a href="{% url 'tasks:my_created_tasks' %}">My Created Tasks</a></p>
+ {% endif %}
+
   <button> <a  href="{% url 'index' %}">Back</a> </button>
 
  <form action="{% url 'logout' %}" method="post">
