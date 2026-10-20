@@ -134,3 +134,53 @@ class MyCreatedTasksTests(TestCase):
         self.client.force_login(self.employee)
         response = self.client.get(reverse("base"))
         self.assertNotContains(response, f'href="{self.url}"')
+
+    def add_tasks_for_pagination(self):
+        return Task.objects.bulk_create(
+            [
+                Task(
+                    title=f"Additional task {number + 1}",
+                    description="Work for the signed-in manager.",
+                    due_date=self.due_date,
+                    created_by=self.manager,
+                )
+                for number in range(12)
+            ]
+        )
+
+    def test_pagination_keeps_ownership_order_counts_and_navigation(self):
+        additional_tasks = self.add_tasks_for_pagination()
+        self.client.force_login(self.manager)
+        first_page = self.client.get(self.url)
+        second_page = self.client.get(self.url, {"page": 2})
+
+        self.assertEqual(first_page.context["page_obj"].paginator.count, 14)
+        self.assertQuerySetEqual(
+            first_page.context["tasks"],
+            [self.earlier_task.pk] + [task.pk for task in additional_tasks[:9]],
+            transform=lambda task: task.pk,
+        )
+        self.assertQuerySetEqual(
+            second_page.context["tasks"],
+            [task.pk for task in additional_tasks[9:]] + [self.later_task.pk],
+            transform=lambda task: task.pk,
+        )
+        self.assertContains(first_page, "Showing 1 to 10 of 14 tasks.")
+        self.assertContains(first_page, 'href="?page=2" rel="next"')
+        self.assertNotContains(first_page, 'rel="prev"')
+        self.assertContains(second_page, "Showing 11 to 14 of 14 tasks.")
+        self.assertContains(second_page, 'href="?page=1" rel="prev"')
+        self.assertNotContains(second_page, 'rel="next"')
+        for response in (first_page, second_page):
+            self.assertNotContains(response, escape(self.other_task.title))
+
+    def test_invalid_page_values_fall_back_without_revealing_other_tasks(self):
+        self.add_tasks_for_pagination()
+        self.client.force_login(self.manager)
+        for page_value, expected_page in (("invalid", 1), ("999", 2), ("0", 2)):
+            with self.subTest(page=page_value):
+                response = self.client.get(self.url, {"page": page_value})
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.context["page_obj"].number, expected_page)
+                self.assertEqual(response.context["page_obj"].paginator.count, 14)
+                self.assertNotContains(response, escape(self.other_task.title))

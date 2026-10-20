@@ -20,6 +20,7 @@
     <main>
         <h1>My Created Tasks</h1>
         {% if tasks %}
+        <p>Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} task{{ page_obj.paginator.count|pluralize }}.</p>
         <table>
             <caption>Tasks you created, ordered by due date.</caption>
             <thead>
@@ -45,6 +46,19 @@
                 {% endfor %}
             </tbody>
         </table>
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="Task pages">
+            {% if page_obj.has_previous %}
+            <a href="?page=1">First</a>
+            <a href="?page={{ page_obj.previous_page_number }}" rel="prev">Previous</a>
+            {% endif %}
+            <span aria-current="page">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" rel="next">Next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+            {% endif %}
+        </nav>
+        {% endif %}
         {% else %}
         <p>You haven't created any tasks yet.</p>
         {% endif %}
