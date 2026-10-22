@@ -129,4 +129,4 @@ MAILERS = {
     },
 }
 
-LOGIN_REDIRECT_URL = 'base'
+LOGIN_REDIRECT_URL = 'dashboard'

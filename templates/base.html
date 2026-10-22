@@ -1,21 +1,59 @@
+{% load static %}
 <!doctype html><html>
  <head>
- <meta charset="utf-8">
- <title>BASE PAGE PLEASE</title>
- </head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Base Hopefully{% endblock %}</title>
+     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+</head>
  <body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+<div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'index' %}">Index Hopefully</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'base' %}">Home</a>
+                </li>
+                <li class="nav-item">
+                     <a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a>
+                </li>
 
- <h1>Please Be Base</h1><br>
+            </ul>
 
- {% if user.is_authenticated and user.profile.is_approved and user.profile.role == "manager" %}
- <p><a href="{% url 'tasks:my_created_tasks' %}">My Created Tasks</a></p>
- {% endif %}
+        </div>
+        <ul class="nav navbar-nav ml-auto">
+        {% if user.is_authenticated %}
+           <li>
+              <form action="{% url 'logout' %}" method="post">
+                 {% csrf_token %}
+                 <button type="submit">Log out</button>
+              </form>
+           </li>
+        {% else %}
+            <li><a class="nav-link" href="{% url 'login' %}"><span class="glyphicon glyphicon-log-in"></span>Login</a>
+            </li>
+            <li><a class="nav-link" href="{% url 'register' %}"><span class="glyphicon glyphicon-log-in"></span>Sign Up</a>
+            </li>
+        {% endif %}
+    </ul>
 
+    </div>
+</nav>
+
+{% block content %}
   <button> <a  href="{% url 'index' %}">Back</a> </button>
 
  <form action="{% url 'logout' %}" method="post">
      {% csrf_token %}
      <button type="submit">Log out</button>
  </form>
+ {% endblock %}
  </body>
 </html>
+
