@@ -91,3 +91,20 @@
     border-radius: 5px;
     margin-top: 10px;
 }
+/* small gray help text under the sign up fields */
+.helptext {
+    font-size: 13px;
+    color: #6c757d;
+}
+
+.page form ul {
+    font-size: 13px;
+    color: #6c757d;
+    padding-left: 18px;
+    margin: 5px 0;
+}
+
+/* center text that sits outside the form */
+.page > p {
+    text-align: center;
+}
