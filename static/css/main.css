@@ -6,3 +6,25 @@
        color: #0d6efd;
        padding: 20px;
    }
+/* navbar */
+.navbar {
+    padding: 10px 20px;
+}
+
+.navbar-brand {
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.navbar form button {
+    background-color: transparent;
+    color: white;
+    border: 1px solid white;
+    border-radius: 5px;
+    padding: 5px 15px;
+}
+
+.navbar form button:hover {
+    background-color: white;
+    color: #212529;
+}
