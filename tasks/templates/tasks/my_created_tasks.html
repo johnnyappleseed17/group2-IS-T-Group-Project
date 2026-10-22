@@ -1,3 +1,4 @@
+{% extends 'base.html' %}
 <!doctype html>
 <html lang="en">
 <head>
@@ -5,16 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>My Created Tasks</title>
 </head>
+{% block content %}
 <body>
     <header>
-        <nav aria-label="Main navigation">
-            <a href="{% url 'base' %}">Home</a>
-        </nav>
         <p>Signed in as {{ user.get_username }}</p>
-        <form action="{% url 'logout' %}" method="post">
-            {% csrf_token %}
-            <button type="submit">Log out</button>
-        </form>
     </header>
 
     <main>
@@ -64,4 +59,5 @@
         {% endif %}
     </main>
 </body>
+{% endblock %}
 </html>
