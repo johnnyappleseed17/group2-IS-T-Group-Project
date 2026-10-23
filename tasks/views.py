@@ -1,6 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
+from django.db import IntegrityError, transaction
 from django.shortcuts import render
 from django.views.decorators.http import require_safe, require_POST
 from django.shortcuts import get_object_or_404, redirect
@@ -66,16 +67,21 @@ def accept_task(request, task_id):
 
     if profile.role != UserProfile.Role.EMPLOYEE or not profile.is_approved:
         raise PermissionDenied("An approved account is required.")
-    task = get_object_or_404(Task.objects.select_for_update(), pk=task_id)
 
-    if task.is_archived or task.completed_at or task.is_finished:
-        messages.error(request, "This task is no longer available.")
-    elif TaskAssignment.objects.filter(task=task, assignee=request.user).exists():
+    try:
+        with transaction.atomic():
+            task = get_object_or_404(Task.objects.select_for_update(), pk=task_id)
+
+            if task.is_archived or task.is_finished:
+                messages.error(request, "This task is no longer available.")
+            elif TaskAssignment.objects.filter(task=task, assignee=request.user).exists():
+                messages.info(request, "You have already accepted this task.")
+            elif task.is_full:
+                messages.error(request, "This task has no spots left.")
+            else:
+                TaskAssignment.objects.create(task=task, assignee=request.user)
+                messages.success(request, "You accepted the task.")
+    except IntegrityError:
         messages.info(request, "You have already accepted this task.")
-    elif task.is_full:
-        messages.error(request, "This task has no spots left.")
-    else:
-        TaskAssignment.objects.create(task=task, assignee=request.user)
-        messages.success(request, "You accepted the task.")
-    return redirect("tasks:my_accepted_tasks")
 
+    return redirect("tasks:my_accepted_tasks")

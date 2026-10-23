@@ -3,6 +3,7 @@ from tasks.models import Task
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 
+@login_required
 def dashboard(request):
     role = request.user.profile.role
     if role == 'manager':
@@ -21,4 +22,3 @@ def dashboard(request):
             "accounts/employee_dash.html",
             {"tasks": page_obj.object_list, "page_obj": page_obj},
         )
-
