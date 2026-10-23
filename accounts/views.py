@@ -3,6 +3,9 @@ from tasks.models import Task
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET
+from accounts.models import UserProfile
 
 from .models import UserProfile
 
@@ -32,3 +35,36 @@ def dashboard(request):
             {"tasks": page_obj.object_list, "page_obj": page_obj},
         )
 
+@login_required
+@require_GET
+def calendar_events(request):
+    try:
+        profile = request.user.profile
+    except UserProfile.DoesNotExist:
+        raise PermissionDenied
+
+    if not profile.is_approved:
+        raise PermissionDenied
+
+    if profile.role == UserProfile.Role.MANAGER:
+        tasks = Task.objects.filter(
+            created_by=request.user,
+            assignments__isnull=False,
+        ).distinct()
+    elif profile.role == UserProfile.Role.EMPLOYEE:
+        tasks = Task.objects.filter(
+            assignments__assignee=request.user,
+        ).distinct()
+    else:
+        raise PermissionDenied
+
+    events = [
+        {
+            "id": task.pk,
+            "title": task.title,
+            "start": task.due_date.isoformat(),
+            "allDay": True,
+        }
+        for task in tasks
+    ]
+    return JsonResponse(events, safe=False)

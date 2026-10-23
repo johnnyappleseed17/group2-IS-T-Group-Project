@@ -1,23 +1,14 @@
-{% extends 'base.html' %}
-<!doctype html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>My Accepted Tasks</title>
-</head>
-{% block content %}
-<body>
-    <header>
-        <p>Signed in as {{ user.get_username }}</p>
-    </header>
+{% extends "base.html" %}
 
-    <main>
+{% block title %}My Accepted Tasks{% endblock %}
+
+{% block content %}
         <h1>My Accepted Tasks</h1>
         {% if tasks %}
         <p>Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} task{{ page_obj.paginator.count|pluralize }}.</p>
-        <table>
-            <caption>Tasks you Accepted, ordered by due date.</caption>
+        <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <caption>Tasks you accepted, ordered by due date.</caption>
             <thead>
                 <tr>
                     <th scope="col">Task</th>
@@ -41,6 +32,7 @@
                 {% endfor %}
             </tbody>
         </table>
+        </div>
         {% if page_obj.has_other_pages %}
         <nav aria-label="Task pages">
             {% if page_obj.has_previous %}
@@ -57,7 +49,4 @@
         {% else %}
         <p>You haven't accepted any tasks yet.</p>
         {% endif %}
-    </main>
-</body>
 {% endblock %}
-</html>
