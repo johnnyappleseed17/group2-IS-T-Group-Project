@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}{% if task %}Edit Task{% else %}Create Task{% endif %}{% endblock %}
+
+{% block content %}
+<h1>{% if task %}Edit Task{% else %}Create Task{% endif %}</h1>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">{% if task %}Save changes{% else %}Create task{% endif %}</button>
+    <a href="{% url 'tasks:my_created_tasks' %}">Cancel</a>
+</form>
+{% endblock %}

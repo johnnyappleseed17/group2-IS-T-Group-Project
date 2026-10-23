@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Task{% endblock %}
+
+{% block content %}
+<h1>Delete Task</h1>
+{% if has_assignments %}
+<div class="alert alert-warning" role="alert">
+    This task cannot be deleted because it has accepted assignments. Edit it instead.
+</div>
+<p><strong>{{ task.title }}</strong></p>
+<p>
+    <a href="{% url 'tasks:task_update' task.pk %}">Edit task</a> |
+    <a href="{% url 'tasks:my_created_tasks' %}">Back to my tasks</a>
+</p>
+{% else %}
+<form method="post">
+    {% csrf_token %}
+    <p>Delete <strong>{{ task.title }}</strong>?</p>
+    <p>This permanently deletes the task and cannot be undone.</p>
+    <button type="submit">Delete task</button>
+    <a href="{% url 'tasks:my_created_tasks' %}">Cancel</a>
+</form>
+{% endif %}
+{% endblock %}
