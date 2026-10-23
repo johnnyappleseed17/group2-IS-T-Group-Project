@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block title %}Available Tasks{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1 class="mb-3">Available Tasks</h1>
+
+  {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}" role="alert">
+      {{ message }}
+    </div>
+  {% endfor %}
+
+  {% if tasks %}
+    <table class="table table-striped align-middle">
+      <thead>
+        <tr>
+          <th scope="col">Task</th>
+          <th scope="col">Description</th>
+          <th scope="col">Due</th>
+          <th scope="col">Categories</th>
+          <th scope="col">Spots left</th>
+          <th scope="col"></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for task in tasks %}
+          <tr>
+            <th scope="row">{{ task.title }}</th>
+            <td>{{ task.description|truncatechars:80 }}</td>
+            <td class="fw-bold text-{% if task.due_color == 'red' %}danger{% elif task.due_color == 'yellow' %}warning{% else %}success{% endif %}">
+              {{ task.due_date|date:"M j, Y" }}
+            </td>
+            <td>{% for category in task.categories.all %}{{ category.name }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</td>
+            <td>{{ task.spots_left }}</td>
+            <td>
+              <form method="post" action="{% url 'tasks:claim_task' task.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-success btn-sm">Claim</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No tasks are available right now. Check back soon!</p>
+  {% endif %}
+</div>
+{% endblock %}
