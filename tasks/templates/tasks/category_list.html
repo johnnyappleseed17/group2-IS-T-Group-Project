@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Categories{% endblock %}
+
+{% block content %}
+<h1>Categories</h1>
+<p><a class="btn btn-primary" href="{% url 'tasks:category_create' %}">Create category</a></p>
+{% if categories %}
+<div class="table-responsive">
+<table class="table table-striped align-middle">
+    <caption>Task categories, in alphabetical order.</caption>
+    <thead>
+        <tr>
+            <th scope="col">Name</th>
+            <th scope="col">Color</th>
+            <th scope="col">Tasks using it</th>
+            <th scope="col">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for category in categories %}
+        <tr>
+            <th scope="row">{{ category.name }}</th>
+            <td>{% if category.color %}<span style="display:inline-block;width:1.2em;height:1.2em;background:{{ category.color }};border:1px solid #888;vertical-align:middle;"></span> {{ category.color }}{% else %}None{% endif %}</td>
+            <td>{{ category.task_count }}</td>
+            <td>
+                <a href="{% url 'tasks:category_update' category.pk %}">Rename</a>
+                <a href="{% url 'tasks:category_delete' category.pk %}">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<p>There are no categories yet.</p>
+{% endif %}
+{% endblock %}
