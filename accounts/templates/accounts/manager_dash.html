@@ -1,27 +1,29 @@
 {% extends 'base.html' %}
+
+{% block title %}Manager Dashboard{% endblock %}
+
 {% block content %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>This is for managers</title>
-</head>
-<body>
-    <h2>My Tasks Calendar</h2>
-<div id="calendar"></div>
+<div class="container mt-4">
+  <h1 class="mb-3">Manager Dashboard</h1>
 
-<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const calendarElement = document.getElementById("calendar");
-    const calendar = new FullCalendar.Calendar(calendarElement, {
-      initialView: "dayGridMonth",
-      events: "{% url 'calendar_events' %}"
+  <p>
+    <a class="btn btn-primary" href="{% url 'tasks:task_create' %}">Create task</a>
+    <a class="btn btn-outline-secondary" href="{% url 'tasks:my_created_tasks' %}">Created tasks</a>
+  </p>
+
+  <h2 class="h4">My Tasks Calendar</h2>
+  <div id="calendar"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const calendarElement = document.getElementById("calendar");
+      const calendar = new FullCalendar.Calendar(calendarElement, {
+        initialView: "dayGridMonth",
+        events: "{% url 'calendar_events' %}"
+      });
+      calendar.render();
     });
-
-    calendar.render();
-  });
-</script>
-</body>
-</html>
+  </script>
+</div>
 {% endblock %}
