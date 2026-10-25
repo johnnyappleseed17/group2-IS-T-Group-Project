@@ -131,3 +131,6 @@ MAILERS = {
 }
 
 LOGIN_REDIRECT_URL = 'dashboard'
+LOGOUT_REDIRECT_URL = 'login'
+LOGIN_URL = 'login'
+DEFAULT_FROM_EMAIL = 'noreply@localhost'
