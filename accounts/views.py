@@ -58,13 +58,14 @@ def calendar_events(request):
     else:
         raise PermissionDenied
 
-    events = [
-        {
+    events = []
+    for task in tasks:
+        category = task.categories.first()
+        events.append({
             "id": task.pk,
             "title": task.title,
             "start": task.due_date.isoformat(),
             "allDay": True,
-        }
-        for task in tasks
-    ]
+            "color": category.color if category and category.color else "#3788d8",
+        })
     return JsonResponse(events, safe=False)

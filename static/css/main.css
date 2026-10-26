@@ -108,3 +108,16 @@
 .page > p {
     text-align: center;
 }
+
+.due-color-dot {
+    display: inline-block;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    vertical-align: middle;
+}
+
+.due-color-red { background-color: red; }
+.due-color-yellow { background-color: yellow; }
+.due-color-green { background-color: green; }
+.due-color-done { background-color: dimgray; }

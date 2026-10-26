@@ -12,6 +12,7 @@
             <thead>
                 <tr>
                     <th scope="col">Task</th>
+                    <th scope="col">Timeline Status</th>
                     <th scope="col">Description</th>
                     <th scope="col">Due date</th>
                     <th scope="col">Categories</th>
@@ -23,6 +24,12 @@
                 {% for task in tasks %}
                 <tr>
                     <th scope="row">{{ task.title }}</th>
+                    <td>
+                          <span class="due-color-dot due-color-{{ task.due_color }}"
+                              role="img"
+                              aria-label="Timeline status: {{ task.due_color }}"
+                              title="{{ task.due_color|capfirst }}"></span>
+                      </td>
                     <td>{{ task.description|linebreaksbr }}</td>
                     <td><time datetime="{{ task.due_date|date:'Y-m-d' }}">{{ task.due_date|date:"Y-m-d" }}</time></td>
                     <td>{% for category in task.categories.all %}{{ category.name }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</td>
