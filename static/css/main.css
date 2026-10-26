@@ -1,12 +1,41 @@
-   body {
-       background-color: #eef2f7;
-   }
+/* ==========================================================
+   main.css: site styles (loaded after Bootstrap in base.html)
+   ========================================================== */
 
-   h1 {
-       color: #0d6efd;
-       padding: 20px;
-   }
-/* navbar */
+:root {
+    --page-bg: #eef2f7;
+    --card-bg: #ffffff;
+    --primary: #0d6efd;
+    --primary-dark: #0b5ed7;
+    --danger: #dc3545;
+    --danger-dark: #bb2d3b;
+    --text-muted: #6c757d;
+    --border: #d5dbe3;
+    --radius: 8px;
+    --shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+html,
+body {
+    background-color: var(--page-bg);
+    min-height: 100%;
+}
+
+/* ---------- headings ---------- */
+
+h1 {
+    color: var(--primary);
+    font-size: 2rem;
+    margin: 10px 0 20px;
+}
+
+h2 {
+    font-size: 1.4rem;
+    margin: 35px 0 15px;
+}
+
+/* ---------- navbar ---------- */
+
 .navbar {
     padding: 10px 20px;
 }
@@ -14,6 +43,19 @@
 .navbar-brand {
     font-weight: bold;
     letter-spacing: 1px;
+}
+
+/* "Signed in as ..." text */
+.navbar p.navbar-brand {
+    margin: 0 15px 0 0;
+    font-size: 0.95rem;
+    font-weight: normal;
+    letter-spacing: 0;
+    color: #adb5bd;
+}
+
+.navbar form {
+    margin: 0;
 }
 
 .navbar form button {
@@ -28,83 +70,350 @@
     background-color: white;
     color: #212529;
 }
+
 /* keep login / sign up links side by side */
 .navbar .nav {
     flex-direction: row;
+    align-items: center;
     gap: 15px;
 }
 
-/* main page area */
+/* ---------- main page area ---------- */
+
 .page {
-    max-width: 900px;
+    max-width: 1100px;
     margin: 30px auto;
     padding: 0 20px;
 }
 
-/* forms (login and sign up) */
-.page form {
-    background-color: white;
-    max-width: 450px;
-    margin: 40px auto;
+/* ---------- form cards (login, sign up, reset, task, category, delete) ---------- */
+
+/* Only forms sitting directly in the page become cards.
+   Small forms inside tables (like "Accept task") stay inline. */
+.page > form {
+    background-color: var(--card-bg);
+    max-width: 480px;
+    margin: 0 auto 25px;
     padding: 25px;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
 }
 
-.page form table {
-    width: 100%;
+/* on pages built around a form card, center the heading and text with it */
+.page:has(> form) > h1,
+.page:has(> form) > p {
+    text-align: center;
 }
 
-.page form input[type="text"],
-.page form input[type="password"],
-.page form input[type="email"] {
+.page > form p {
+    margin-bottom: 15px;
+}
+
+.page > form label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+/* the login form uses a table for layout */
+.page > form table {
     width: 100%;
-    padding: 6px 10px;
+    margin-bottom: 5px;
+}
+
+.page > form table td {
+    padding: 5px 0;
+    vertical-align: middle;
+}
+
+.page > form table td:first-child {
+    width: 100px;
+}
+
+.page > form table label {
+    margin: 0;
+}
+
+/* every kind of input the forms use */
+.page > form input[type="text"],
+.page > form input[type="password"],
+.page > form input[type="email"],
+.page > form input[type="number"],
+.page > form input[type="date"],
+.page > form select,
+.page > form textarea {
+    display: block;
+    width: 100%;
+    padding: 7px 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
+    background-color: white;
+    font-size: 1rem;
 }
+
+.page > form select[multiple] {
+    min-height: 110px;
+}
+
+.page > form input:focus,
+.page > form select:focus,
+.page > form textarea:focus {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.2);
+}
+
+/* ---------- buttons ---------- */
 
 .page form input[type="submit"],
 .page form button {
-    background-color: #0d6efd;
+    background-color: var(--primary);
     color: white;
     border: none;
     padding: 8px 20px;
     border-radius: 5px;
     margin-top: 10px;
-}
-.page form input[type="text"],
-.page form input[type="password"],
-.page form input[type="email"] {
-    width: 100%;
-    padding: 6px 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+    cursor: pointer;
 }
 
-.page form input[type="submit"],
-.page form button {
-    background-color: #0d6efd;
-    color: white;
-    border: none;
-    padding: 8px 20px;
-    border-radius: 5px;
-    margin-top: 10px;
+.page form input[type="submit"]:hover,
+.page form button:hover {
+    background-color: var(--primary-dark);
 }
-/* small gray help text under the sign up fields */
+
+/* "Cancel" link next to a form button looks like a gray button */
+.page > form > a {
+    display: inline-block;
+    margin: 10px 0 0 8px;
+    padding: 7px 18px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: #495057;
+    text-decoration: none;
+}
+
+.page > form > a:hover {
+    background-color: #f1f3f5;
+}
+
+/* Confirm forms (no fields to fill in, only a button) are the
+   delete pages, so their button is red. */
+.page > form:not(:has(input:not([type="hidden"]), select, textarea)) button {
+    background-color: var(--danger);
+}
+
+.page > form:not(:has(input:not([type="hidden"]), select, textarea)) button:hover {
+    background-color: var(--danger-dark);
+}
+
+/* ---------- help text and errors ---------- */
+
 .helptext {
+    display: block;
     font-size: 13px;
-    color: #6c757d;
+    color: var(--text-muted);
+    margin-top: 4px;
 }
 
 .page form ul {
     font-size: 13px;
-    color: #6c757d;
+    color: var(--text-muted);
     padding-left: 18px;
     margin: 5px 0;
 }
 
-/* center text that sits outside the form */
-.page > p {
-    text-align: center;
+.page form ul.errorlist {
+    color: var(--danger);
+    list-style: none;
+    padding: 8px 12px;
+    background-color: #f8d7da;
+    border-radius: 5px;
+}
+
+/* ---------- tables (task lists, categories, dashboard) ---------- */
+
+/* Bootstrap tables get a white card around them */
+.page .table-responsive {
+    background-color: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 5px 15px;
+    margin-bottom: 20px;
+}
+
+.page .table {
+    margin-bottom: 0;
+}
+
+/* the employee dashboard table has no Bootstrap classes, so style it here */
+.page main > table {
+    width: 100%;
+    background-color: var(--card-bg);
+    border-collapse: collapse;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.page main > table th,
+.page main > table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e9ecef;
+    vertical-align: middle;
+    text-align: left;
+}
+
+.page main > table thead th {
+    background-color: #f8f9fa;
+}
+
+.page main > table tbody tr:last-child th,
+.page main > table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.page :is(.table, main > table) caption {
+    caption-side: bottom;
+    font-size: 13px;
+    color: var(--text-muted);
+    padding: 10px 0 5px;
+}
+
+.page :is(.table, main > table) thead th {
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+.page :is(.table, main > table) td time {
+    white-space: nowrap;
+}
+
+/* "Accept task" button inside a table row */
+.page :is(.table, main > table) td form {
+    margin: 0;
+}
+
+.page :is(.table, main > table) td form button {
+    margin: 0;
+    padding: 5px 12px;
+    font-size: 14px;
+    white-space: nowrap;
+}
+
+/* Edit / Rename / Delete links in table rows */
+.page :is(.table, main > table) td a {
+    display: inline-block;
+    margin-right: 10px;
+    font-size: 14px;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.page :is(.table, main > table) td a:hover {
+    text-decoration: underline;
+}
+
+/* keep Edit / Delete side by side */
+.page :is(.table, main > table) td:has(> a) {
+    white-space: nowrap;
+}
+
+.page :is(.table, main > table) td a[href*="delete"] {
+    color: var(--danger);
+}
+
+/* ---------- pagination ---------- */
+
+.page nav[aria-label="Task pages"] {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    margin: 10px 0 25px;
+}
+
+.page nav[aria-label="Task pages"] a,
+.page nav[aria-label="Task pages"] span {
+    padding: 5px 12px;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.page nav[aria-label="Task pages"] a {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+}
+
+.page nav[aria-label="Task pages"] a:hover {
+    background-color: #e7f1ff;
+}
+
+.page nav[aria-label="Task pages"] span {
+    color: var(--text-muted);
+}
+
+/* ---------- dashboard calendar ---------- */
+
+#calendar {
+    background-color: var(--card-bg);
+    padding: 20px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 30px;
+}
+
+/* calendar day names and numbers: black, no underline */
+#calendar a {
+    color: #212529;
+    text-decoration: none;
+}
+
+/* month title, e.g. "October 2026", in bold */
+#calendar .fc-toolbar-title {
+    font-weight: bold;
+}
+
+/* manager dashboard: the page already has padding */
+.page > .container {
+    padding: 0;
+}
+
+/* ---------- alerts ---------- */
+
+.page .alert {
+    border-radius: var(--radius);
+}
+
+/* ---------- small screens ---------- */
+
+@media (max-width: 768px) {
+    .page {
+        margin: 20px auto;
+        padding: 0 16px;
+    }
+
+    h1 {
+        font-size: 1.6rem;
+    }
+
+    .page > form {
+        padding: 20px;
+    }
+
+    /* let wide tables scroll sideways instead of squashing */
+    .page main > table {
+        display: block;
+        overflow-x: auto;
+    }
+
+    .navbar p.navbar-brand {
+        display: none;
+    }
+
+    #calendar {
+        padding: 10px;
+    }
 }
