@@ -4,11 +4,11 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Available Tasks</title>
+    <title>{% block title %}Available Tasks{% endblock %}</title>
 </head>
+<main>
 {% block content %}
 <body>
-    <main>
         <h1>Available Tasks</h1>
         {% if tasks %}
         <p>Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} task{{ page_obj.paginator.count|pluralize }}.</p>
@@ -81,7 +81,7 @@
     calendar.render();
   });
 </script>
-    </main>
 </body>
+</main>
 {% endblock %}
 </html>
