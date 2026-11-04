@@ -38,7 +38,19 @@
                 {% endif %}
             </ul>
         </div>
-        <p class="navbar-brand">Signed in as {{ user.get_username }}</p>
+               {% if user.is_authenticated %}
+        <p class="navbar-brand">
+          Signed in as {{ user.get_username }}
+          {% if user.profile.role == 'manager' %}
+            <span class="badge text-bg-warning">MANAGER</span>
+          {% elif user.profile.role == 'employee' %}
+            <span class="badge text-bg-secondary">EMPLOYEE</span>
+          {% endif %}
+          {% if user.profile.manager_requested %}
+            <span class="badge text-bg-info">Manager request pending</span>
+          {% endif %}
+        </p>
+        {% endif %}
         <ul class="nav navbar-nav ml-auto">
         {% if user.is_authenticated %}
            <li>
