@@ -25,7 +25,7 @@ def dashboard(request):
             Task.objects.filter(is_archived=False, completed_at__isnull=True)
             .exclude(assignments__assignee=request.user)
             .prefetch_related("categories", "assignments")
-            .order_by("due_date", "pk")
+            .order_by("-is_priority", "due_date", "pk")
         )
         tasks = [task for task in tasks if not task.is_full and not task.is_finished]
         page_obj = Paginator(tasks, 10).get_page(request.GET.get("page"))
