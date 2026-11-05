@@ -7,7 +7,7 @@ from .models import Category, Task
 class TaskForm(forms.ModelForm):
     class Meta:
         model = Task
-        fields = ["title", "description", "due_date", "employees_needed", "categories"]
+        fields = ["title", "description", "due_date", "employees_needed", "is_priority", "categories"]
         widgets = {
             "title": forms.TextInput(attrs={"class": "form-control"}),
             "description": forms.Textarea(attrs={"class": "form-control", "rows": 4}),
@@ -18,10 +18,12 @@ class TaskForm(forms.ModelForm):
                 attrs={"min": 1, "class": "form-control"}
             ),
             "categories": forms.SelectMultiple(attrs={"class": "form-select"}),
+            "is_priority": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
         help_texts = {
             "employees_needed": "Total number of people needed for this task.",
             "categories": "Optional. Hold Ctrl (Windows) or Command (Mac) to select multiple categories.",
+            "is_priority": "Priority tasks are shown first in task lists.",
         }
 
     def clean_employees_needed(self):

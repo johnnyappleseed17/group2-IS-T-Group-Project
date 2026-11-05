@@ -25,7 +25,7 @@
             <tbody>
                 {% for task in tasks %}
                 <tr>
-                    <th scope="row">{{ task.title }}</th>
+                                        <th scope="row">{{ task.title }} {% if task.is_priority %}<span class="badge text-bg-danger">Priority</span>{% endif %}</th>
                       <td>
                           <span class="due-color-dot due-color-{{ task.due_color }}"
                               role="img"
