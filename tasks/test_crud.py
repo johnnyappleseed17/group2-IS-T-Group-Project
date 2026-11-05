@@ -122,7 +122,7 @@ class TaskCrudTests(TestCase):
         self.assertTrue(Task.objects.filter(pk=self.task.pk).exists())
 
     def test_forms_expose_only_editable_fields_and_prefill_an_iso_date(self):
-        editable_fields = {"title", "description", "due_date", "employees_needed", "categories"}
+        editable_fields = {"title", "description", "due_date", "employees_needed", "is_priority", "categories"}
         for url in (self.create_url, self.edit_url):
             with self.subTest(url=url):
                 response = self.client.get(url)
