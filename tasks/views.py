@@ -31,7 +31,7 @@ def my_created_tasks(request):
     tasks = (
         Task.objects.filter(created_by=request.user)
         .prefetch_related("categories", "assignments")
-        .order_by("due_date", "pk")
+        .order_by("-is_priority", "due_date", "pk")
     )
     page_obj = Paginator(tasks, 10).get_page(request.GET.get("page"))
     return render(
@@ -110,7 +110,7 @@ def my_accepted_tasks(request):
     tasks = (
         Task.objects.filter(assignments__assignee=request.user)
         .prefetch_related("categories", "assignments")
-        .order_by("due_date", "pk")
+        .order_by("-is_priority", "due_date", "pk")
     )
     page_obj = Paginator(tasks, 10).get_page(request.GET.get("page"))
     return render(

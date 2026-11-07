@@ -28,6 +28,10 @@ class Task(models.Model):
     employees_needed = models.PositiveSmallIntegerField(
         default=1, validators=[MinValueValidator(1)]
     )
+    is_priority = models.BooleanField(
+        default=False,
+        help_text="Priority tasks are shown first and marked with a badge.",
+    )
     categories = models.ManyToManyField(Category, blank=True, related_name="tasks")
 
     created_by = models.ForeignKey(
