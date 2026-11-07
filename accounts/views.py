@@ -6,6 +6,7 @@ from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from accounts.models import UserProfile
+from django.urls import reverse
 
 from .models import UserProfile
 
@@ -67,5 +68,7 @@ def calendar_events(request):
             "start": task.due_date.isoformat(),
             "allDay": True,
             "color": category.color if category and category.color else "#3788d8",
+            "url": reverse("tasks:task_detail", args=[task.pk]),
+
         })
     return JsonResponse(events, safe=False)
