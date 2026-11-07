@@ -22,7 +22,7 @@
             <tbody>
                 {% for assignment in assignments %}
                 <tr>
-                    <th scope="row">{{ assignment.task.title }} {% if assignment.task.is_priority %}<span class="badge text-bg-danger">Priority</span>{% endif %}</th>
+                    <th scope="row"><a href="{% url 'tasks:task_detail' assignment.task.pk %}">{{ assignment.task.title }}</a> {% if assignment.task.is_priority %}<span class="badge text-bg-danger">Priority</span>{% endif %}</th>
                     <td>{{ assignment.task.description|linebreaksbr }}</td>
                     <td>{% for category in assignment.task.categories.all %}{{ category.name }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</td>
                     <td><time datetime="{{ assignment.task.due_date|date:'Y-m-d' }}">{{ assignment.task.due_date|date:"Y-m-d" }}</time></td>
