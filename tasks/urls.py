@@ -1,7 +1,7 @@
 from django.urls import path
 
 from . import category_views, views
-
+from .history_views import task_history
 app_name = "tasks"
 
 urlpatterns = [
@@ -15,4 +15,5 @@ urlpatterns = [
     path("categories/create/", category_views.category_create, name="category_create"),
     path("categories/<int:category_id>/edit/", category_views.category_update, name="category_update"),
     path("categories/<int:category_id>/delete/", category_views.category_delete, name="category_delete"),
+    path("history/", task_history, name="task_history"),
 ]
