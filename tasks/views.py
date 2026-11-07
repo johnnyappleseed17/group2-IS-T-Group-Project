@@ -7,6 +7,8 @@ from django.views.decorators.http import require_http_methods, require_safe, req
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib import messages
 from accounts.models import UserProfile
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views import generic
 
 from .forms import TaskForm
 from .models import Task, TaskAssignment
@@ -141,3 +143,7 @@ def accept_task(request, task_id):
         messages.success(request, "You accepted the task.")
     return redirect("tasks:my_accepted_tasks")
 
+class TaskDetailView(LoginRequiredMixin, generic.DetailView):
+    model = Task
+    template_name = "tasks/task_detail.html"
+    context_object_name = "task"

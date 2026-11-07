@@ -26,9 +26,9 @@
                 </tr>
             </thead>
             <tbody>
-                {% for task in tasks %}
-                <tr>
-                                        <th scope="row">{{ task.title }} {% if task.is_priority %}<span class="badge text-bg-danger">Priority</span>{% endif %}</th>
+                                {% for task in tasks %}
+                               <tr>
+                    <th scope="row"><a href="{% url 'tasks:task_detail' task.pk %}">{{ task.title }}</a> {% if task.is_priority %}<span class="badge text-bg-danger">Priority</span>{% endif %}</th>
                     <td>
                         <span class="due-color-dot due-color-{{ task.due_color }}"
                               role="img"

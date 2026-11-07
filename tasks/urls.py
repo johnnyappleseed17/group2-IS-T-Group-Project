@@ -15,5 +15,6 @@ urlpatterns = [
     path("categories/create/", category_views.category_create, name="category_create"),
     path("categories/<int:category_id>/edit/", category_views.category_update, name="category_update"),
     path("categories/<int:category_id>/delete/", category_views.category_delete, name="category_delete"),
+    path('<int:pk>/detail/', views.TaskDetailView.as_view(), name='task_detail'),
     path("history/", task_history, name="task_history"),
 ]
