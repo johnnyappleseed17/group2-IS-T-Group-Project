@@ -6,8 +6,90 @@
 <h1>{% if category %}Edit Category{% else %}Create Category{% endif %}</h1>
 <form method="post">
     {% csrf_token %}
-    {{ form.as_p }}
+    {{ form.non_field_errors }}
+    <p>
+        {{ form.name.label_tag }}
+        {{ form.name }}
+        {{ form.name.errors }}
+    </p>
+
+    <div id="color-fallback">
+        <p>
+            {{ form.color.label_tag }}
+            {{ form.color }}
+            <span class="helptext">{{ form.color.help_text }}</span>
+        </p>
+    </div>
+    {{ form.color.errors }}
+
+    <div id="color-widget" hidden>
+        <p><strong>Color</strong> <span class="helptext">Optional. Used on the calendar and on task lists.</span></p>
+        <div class="color-picker" id="color-picker" role="radiogroup" aria-label="Category color"></div>
+        <p class="color-readout">Selected: <span id="color-readout">No color</span></p>
+    </div>
+
     <button type="submit">{% if category %}Save changes{% else %}Create category{% endif %}</button>
     <a href="{% url 'tasks:category_list' %}">Cancel</a>
 </form>
+
+<script>
+(function () {
+    const PRESETS = [
+        ["Red", "#D32F2F"], ["Orange", "#F57C00"], ["Yellow", "#FBC02D"],
+        ["Green", "#388E3C"], ["Teal", "#00897B"], ["Blue", "#1976D2"],
+        ["Indigo", "#3949AB"], ["Purple", "#7B1FA2"], ["Pink", "#C2185B"],
+        ["Gray", "#616161"]
+    ];
+    const input = document.getElementById("id_color");
+    const picker = document.getElementById("color-picker");
+    const readout = document.getElementById("color-readout");
+    const swatches = [];
+
+    function addSwatch(label, color) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "swatch" + (color ? "" : " swatch-none");
+        button.dataset.color = color;
+        button.title = label;
+        button.setAttribute("role", "radio");
+        button.setAttribute("aria-label", label);
+        if (color) { button.style.backgroundColor = color; } else { button.textContent = "\u2715"; }
+        button.addEventListener("click", function () { choose(color); });
+        picker.appendChild(button);
+        swatches.push(button);
+    }
+
+    addSwatch("No color", "");
+    PRESETS.forEach(function (preset) { addSwatch(preset[0], preset[1]); });
+
+    // The "custom" swatch opens the browser's color wheel.
+    const customLabel = document.createElement("label");
+    customLabel.className = "swatch swatch-custom";
+    customLabel.title = "Custom color";
+    const custom = document.createElement("input");
+    custom.type = "color";
+    custom.setAttribute("aria-label", "Custom color");
+    custom.addEventListener("input", function () { choose(custom.value.toUpperCase()); });
+    customLabel.appendChild(custom);
+    picker.appendChild(customLabel);
+
+    function choose(color) {
+        input.value = color;
+        const isPreset = PRESETS.some(function (p) { return p[1].toLowerCase() === color.toLowerCase(); });
+        swatches.forEach(function (s) {
+            s.setAttribute("aria-checked", String(s.dataset.color.toLowerCase() === color.toLowerCase()));
+        });
+        const customSelected = color !== "" && !isPreset;
+        customLabel.setAttribute("aria-checked", String(customSelected));
+        customLabel.style.background = customSelected ? color : "";
+        if (customSelected) { custom.value = color.toLowerCase(); }
+        readout.textContent = color || "No color";
+    }
+
+    // Swap the plain text box for the swatches, and keep what is already saved.
+    document.getElementById("color-fallback").hidden = true;
+    document.getElementById("color-widget").hidden = false;
+    choose((input.value || "").trim());
+})();
+</script>
 {% endblock %}

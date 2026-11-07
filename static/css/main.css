@@ -121,3 +121,54 @@
 .due-color-yellow { background-color: yellow; }
 .due-color-green { background-color: green; }
 .due-color-done { background-color: dimgray; }
+
+/* category color picker */
+.page form .color-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.page form .swatch {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    margin: 0;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px #adb5bd;
+    cursor: pointer;
+    position: relative;
+    background-color: #fff;
+}
+
+.page form .swatch[aria-checked="true"] {
+    box-shadow: 0 0 0 3px #0d6efd;
+}
+
+.page form .swatch-none {
+    color: #6c757d;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.page form .swatch-custom {
+    display: inline-block;
+    background: conic-gradient(red, yellow, lime, aqua, blue, magenta, red);
+    overflow: hidden;
+}
+
+.page form .swatch-custom input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.color-readout {
+    font-family: monospace;
+}
