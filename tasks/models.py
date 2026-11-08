@@ -20,6 +20,18 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def text_color(self):
+        """Dark or white text, whichever is easier to read on this category's color."""
+        color = (self.color or "").lstrip("#")
+        if len(color) != 6:
+            return ""
+        try:
+            red, green, blue = (int(color[i:i + 2], 16) for i in (0, 2, 4))
+        except ValueError:
+            return ""
+        return "#212529" if (red * 299 + green * 587 + blue * 114) / 1000 > 150 else "#ffffff"
+
 
 class Task(models.Model):
     title = models.CharField(max_length=200)
@@ -27,6 +39,10 @@ class Task(models.Model):
     due_date = models.DateField()
     employees_needed = models.PositiveSmallIntegerField(
         default=1, validators=[MinValueValidator(1)]
+    )
+    is_priority = models.BooleanField(
+        default=False,
+        help_text="Priority tasks are shown first and marked with a badge.",
     )
     categories = models.ManyToManyField(Category, blank=True, related_name="tasks")
 

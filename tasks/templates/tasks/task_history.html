@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}My Task History{% endblock %}
+
+{% block content %}
+        <h1>My Task History</h1>
+        {% if assignments %}
+        <p>Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} task{{ page_obj.paginator.count|pluralize }}.</p>
+        <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <caption>Tasks you have worked on, newest first.</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Task</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Categories</th>
+                    <th scope="col">Due date</th>
+                    <th scope="col">Accepted on</th>
+                    <th scope="col">Completed on</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for assignment in assignments %}
+                <tr>
+                    <th scope="row"><a href="{% url 'tasks:task_detail' assignment.task.pk %}">{{ assignment.task.title }}</a> {% if assignment.task.is_priority %}<span class="badge text-bg-danger">Priority</span>{% endif %}</th>
+                    <td>{{ assignment.task.description|linebreaksbr }}</td>
+                    <td>{% for category in assignment.task.categories.all %}{{ category.name }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</td>
+                    <td><time datetime="{{ assignment.task.due_date|date:'Y-m-d' }}">{{ assignment.task.due_date|date:"Y-m-d" }}</time></td>
+                    <td>{{ assignment.claimed_at|date:"Y-m-d" }}</td>
+                    <td>{% if assignment.completed_at %}{{ assignment.completed_at|date:"Y-m-d" }}{% elif assignment.task.completed_at %}{{ assignment.task.completed_at|date:"Y-m-d" }}{% else %}-{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% if page_obj.has_other_pages %}
+        <nav aria-label="History pages">
+            {% if page_obj.has_previous %}
+            <a href="?page=1">First</a>
+            <a href="?page={{ page_obj.previous_page_number }}" rel="prev">Previous</a>
+            {% endif %}
+            <span aria-current="page">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" rel="next">Next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+            {% endif %}
+        </nav>
+        {% endif %}
+        {% else %}
+        <p>You haven't completed any tasks yet.</p>
+        {% endif %}
+{% endblock %}

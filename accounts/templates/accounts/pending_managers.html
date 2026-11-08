@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Manager approvals{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Manager approvals</h1>
+  {% if profiles %}
+  <p>These people asked to become managers. Approving makes them a manager.</p>
+  <div class="table-responsive">
+  <table class="table table-striped align-middle">
+    <caption>People waiting for manager approval, oldest first.</caption>
+    <thead>
+      <tr>
+        <th scope="col">Username</th>
+        <th scope="col">Name</th>
+        <th scope="col">Email</th>
+        <th scope="col">Signed up</th>
+        <th scope="col">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for profile in profiles %}
+      <tr>
+        <th scope="row">{{ profile.user.username }}</th>
+        <td>{{ profile.user.get_full_name|default:"-" }}</td>
+        <td>{{ profile.user.email|default:"-" }}</td>
+        <td>{{ profile.user.date_joined|date:"Y-m-d" }}</td>
+        <td>
+          <form method="post" action="{% url 'approve_manager' profile.pk %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-success">Approve</button>
+          </form>
+          <form method="post" action="{% url 'decline_manager' profile.pk %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-danger">Decline</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p>No one is waiting for approval.</p>
+  {% endif %}
+  <p><a href="{% url 'dashboard' %}">Back to dashboard</a></p>
+</div>
+{% endblock %}

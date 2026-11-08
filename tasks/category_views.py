@@ -10,6 +10,18 @@ from .models import Category
 from .views import _require_approved_manager
 
 
+def _form_context(form, category):
+    others = Category.objects.exclude(pk=category.pk) if category else Category.objects.all()
+    return {
+        "form": form,
+        "category": category,
+        "existing_names": list(others.values_list("name", flat=True)),
+        "used_colors": [
+            {"name": other.name, "color": other.color} for other in others.exclude(color="")
+        ],
+    }
+
+
 @login_required
 @require_safe
 def category_list(request):
@@ -22,12 +34,14 @@ def category_list(request):
 @require_http_methods(["GET", "POST"])
 def category_create(request):
     _require_approved_manager(request.user)
-    form = CategoryForm(request.POST if request.method == "POST" else None)
+    form = CategoryForm(request.POST if request.method == "POST" else None, user=request.user)
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Category created.")
+        if "add_another" in request.POST:
+            return redirect("tasks:category_create")
         return redirect("tasks:category_list")
-    return render(request, "tasks/category_form.html", {"form": form, "category": None})
+    return render(request, "tasks/category_form.html", _form_context(form, None))
 
 
 @login_required
@@ -35,12 +49,16 @@ def category_create(request):
 def category_update(request, category_id):
     _require_approved_manager(request.user)
     category = get_object_or_404(Category, pk=category_id)
-    form = CategoryForm(request.POST if request.method == "POST" else None, instance=category)
+    form = CategoryForm(
+        request.POST if request.method == "POST" else None,
+        instance=category,
+        user=request.user,
+    )
     if request.method == "POST" and form.is_valid():
         form.save()
         messages.success(request, "Category updated.")
         return redirect("tasks:category_list")
-    return render(request, "tasks/category_form.html", {"form": form, "category": category})
+    return render(request, "tasks/category_form.html", _form_context(form, category))
 
 
 @login_required
