@@ -21,10 +21,10 @@
         {% for category in categories %}
         <tr>
             <th scope="row">{{ category.name }}</th>
-            <td>{% if category.color %}<span style="display:inline-block;width:1.2em;height:1.2em;background:{{ category.color }};border:1px solid #888;vertical-align:middle;"></span> {{ category.color }}{% else %}None{% endif %}</td>
-            <td>{{ category.task_count }}</td>
+            <td>{% if category.color %}<span class="category-pill" style="background-color: {{ category.color }}; color: {{ category.text_color }};">{{ category.name }}</span> <small class="text-muted">{{ category.color }}</small>{% else %}<span class="category-pill is-plain">No color</span>{% endif %}</td>
+            <td><a href="{% url 'tasks:category_update' category.pk %}#category-tasks">{{ category.task_count }}</a></td>
             <td>
-                <a href="{% url 'tasks:category_update' category.pk %}">Rename</a>
+                <a href="{% url 'tasks:category_update' category.pk %}">Edit</a>
                 <a href="{% url 'tasks:category_delete' category.pk %}">Delete</a>
             </td>
         </tr>
