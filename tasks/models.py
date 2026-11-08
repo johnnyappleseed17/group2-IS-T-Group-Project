@@ -20,6 +20,18 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+    @property
+    def text_color(self):
+        """Dark or white text, whichever is easier to read on this category's color."""
+        color = (self.color or "").lstrip("#")
+        if len(color) != 6:
+            return ""
+        try:
+            red, green, blue = (int(color[i:i + 2], 16) for i in (0, 2, 4))
+        except ValueError:
+            return ""
+        return "#212529" if (red * 299 + green * 587 + blue * 114) / 1000 > 150 else "#ffffff"
+
 
 class Task(models.Model):
     title = models.CharField(max_length=200)

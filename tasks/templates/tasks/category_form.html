@@ -4,10 +4,259 @@
 
 {% block content %}
 <h1>{% if category %}Edit Category{% else %}Create Category{% endif %}</h1>
-<form method="post">
+<form method="post" class="category-form" id="category-form"{% if not category and not form.is_bound %} data-suggest-color="1"{% endif %}>
     {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">{% if category %}Save changes{% else %}Create category{% endif %}</button>
-    <a href="{% url 'tasks:category_list' %}">Cancel</a>
+    {{ form.non_field_errors }}
+
+    <div class="mb-4">
+        <label class="form-label fw-semibold" for="{{ form.name.id_for_label }}">Name</label>
+        {{ form.name }}
+        {{ form.name.errors }}
+        <div class="name-warning" id="name-warning" hidden></div>
+    </div>
+
+    <div id="color-fallback" class="mb-4">
+        <label class="form-label fw-semibold" for="{{ form.color.id_for_label }}">Color</label>
+        {{ form.color }}
+        <div class="form-text">{{ form.color.help_text }}</div>
+    </div>
+    {{ form.color.errors }}
+
+    <div id="color-widget" class="mb-4" hidden>
+        <div class="fw-semibold mb-2">Color <span class="text-muted fw-normal">(optional)</span></div>
+        <div class="color-picker" id="color-picker" role="radiogroup" aria-label="Category color"></div>
+
+        <details class="fold" id="custom-fold">
+            <summary>Custom color <span class="custom-dot" id="custom-dot" hidden></span></summary>
+            <div class="custom-row">
+                <input type="color" id="color-wheel" aria-label="Pick a custom color" value="#1976d2">
+                <input type="text" id="color-hex" class="form-control" maxlength="7" placeholder="#RRGGBB" aria-label="Custom color hex code" autocomplete="off">
+            </div>
+            <div class="name-warning" id="hex-warning" hidden>Enter a color like #2E7D32.</div>
+        </details>
+
+        <div class="color-preview">
+            <span class="preview-label">Preview</span>
+            <span class="category-pill" id="color-preview">Category</span>
+            <span class="color-hex" id="color-readout">No color</span>
+        </div>
+        <div class="form-text" id="color-note" hidden></div>
+    </div>
+
+    <details class="fold" id="category-tasks" open>
+        <summary>Tasks in this category <span class="count-badge" id="task-count">0</span></summary>
+        {% if form.tasks.field.queryset %}
+        <div class="task-tools">
+            <input type="search" id="task-search" class="form-control" placeholder="Search your tasks" aria-label="Search your tasks" autocomplete="off">
+            <button type="button" class="link-btn" id="task-select-all">Select all</button>
+            <button type="button" class="link-btn" id="task-clear">Clear</button>
+        </div>
+        <ul class="task-checklist" id="task-checklist">
+            {% for checkbox in form.tasks %}
+            {% with task=checkbox.data.value.instance %}
+            <li data-title="{{ task.title|lower }}">
+                <label for="{{ checkbox.id_for_label }}">
+                    {{ checkbox.tag }}
+                    <span class="task-title">{{ task.title }}</span>
+                    {% if task.is_priority %}<span class="badge text-bg-danger">Priority</span>{% endif %}
+                    <span class="task-due">Due {{ task.due_date|date:"M j" }}</span>
+                </label>
+            </li>
+            {% endwith %}
+            {% endfor %}
+        </ul>
+        <p class="form-text" id="task-empty" hidden>No tasks match your search.</p>
+        {% else %}
+        <p class="form-text">You haven't created any tasks yet.</p>
+        {% endif %}
+        {{ form.tasks.errors }}
+        {% if form.other_task_count %}
+        <p class="form-text">{{ form.other_task_count }} task{{ form.other_task_count|pluralize }} by other managers also use{{ form.other_task_count|pluralize:"s," }} this category. You can't change those.</p>
+        {% endif %}
+    </details>
+
+    <div class="d-flex align-items-center gap-3 flex-wrap form-actions">
+        <button type="submit" class="btn btn-primary">{% if category %}Save changes{% else %}Create category{% endif %}</button>
+        {% if not category %}
+        <button type="submit" name="add_another" value="1" class="btn btn-outline-primary">Save and add another</button>
+        {% endif %}
+        <a class="btn btn-link" href="{% url 'tasks:category_list' %}">Cancel</a>
+    </div>
 </form>
+
+{{ existing_names|json_script:"existing-names" }}
+{{ used_colors|json_script:"used-colors" }}
+
+<script>
+(function () {
+    const PRESETS = [
+        ["Red", "#D32F2F"], ["Orange", "#F57C00"], ["Yellow", "#FBC02D"],
+        ["Green", "#388E3C"], ["Teal", "#00897B"], ["Blue", "#1976D2"],
+        ["Indigo", "#3949AB"], ["Purple", "#7B1FA2"], ["Magenta", "#C2185B"],
+        ["Light pink", "#F48FB1"], ["Gray", "#616161"]
+    ];
+    const HEX = /^#[0-9a-fA-F]{6}$/;
+    const form = document.getElementById("category-form");
+    const colorInput = document.getElementById("id_color");
+    const nameInput = document.getElementById("id_name");
+    const picker = document.getElementById("color-picker");
+    const readout = document.getElementById("color-readout");
+    const preview = document.getElementById("color-preview");
+    const note = document.getElementById("color-note");
+    const wheel = document.getElementById("color-wheel");
+    const hexBox = document.getElementById("color-hex");
+    const hexWarning = document.getElementById("hex-warning");
+    const customFold = document.getElementById("custom-fold");
+    const customDot = document.getElementById("custom-dot");
+    const nameWarning = document.getElementById("name-warning");
+    const existingNames = JSON.parse(document.getElementById("existing-names").textContent)
+        .map(function (n) { return n.toLowerCase(); });
+    const usedColors = JSON.parse(document.getElementById("used-colors").textContent);
+    const swatches = [];
+
+    function lower(value) { return (value || "").toLowerCase(); }
+
+    // Which other categories already use this color?
+    function usersOf(color) {
+        return usedColors.filter(function (u) { return lower(u.color) === lower(color); })
+            .map(function (u) { return u.name; });
+    }
+
+    // Pick dark or white text so a label is readable on any color.
+    function textOn(hex) {
+        const n = parseInt(hex.slice(1), 16);
+        const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+        return (r * 299 + g * 587 + b * 114) / 1000 > 150 ? "#212529" : "#ffffff";
+    }
+
+    function addSwatch(label, color) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "swatch" + (color ? "" : " swatch-none");
+        button.dataset.color = color;
+        button.setAttribute("role", "radio");
+        button.setAttribute("aria-label", label);
+        let title = label;
+        if (color) {
+            button.style.backgroundColor = color;
+            button.style.color = textOn(color);
+            const users = usersOf(color);
+            if (users.length) {
+                const dot = document.createElement("span");
+                dot.className = "swatch-used";
+                button.appendChild(dot);
+                title += " (already used by " + users.join(", ") + ")";
+            }
+        }
+        button.title = title;
+        button.addEventListener("click", function () { choose(color); });
+        picker.appendChild(button);
+        swatches.push(button);
+    }
+
+    addSwatch("No color", "");
+    PRESETS.forEach(function (preset) { addSwatch(preset[0], preset[1]); });
+
+    function isPreset(color) {
+        return PRESETS.some(function (p) { return lower(p[1]) === lower(color); });
+    }
+
+    function updatePreview(color) {
+        preview.textContent = (nameInput.value || "").trim() || "Category";
+        preview.style.backgroundColor = color || "";
+        preview.style.color = color ? textOn(color) : "";
+        preview.classList.toggle("is-plain", !color);
+    }
+
+    function choose(color, source) {
+        colorInput.value = color;
+        swatches.forEach(function (s) {
+            s.setAttribute("aria-checked", String(lower(s.dataset.color) === lower(color)));
+        });
+        if (color && source !== "wheel") { wheel.value = color.toLowerCase(); }
+        const custom = color !== "" && !isPreset(color);
+        customDot.hidden = !custom;
+        customDot.style.backgroundColor = custom ? color : "";
+        if (custom) {
+            customFold.open = true;
+            if (source !== "hex") { hexBox.value = color.toUpperCase(); }
+        } else if (source !== "hex") {
+            hexBox.value = "";
+        }
+        readout.textContent = color || "No color";
+        const users = color ? usersOf(color) : [];
+        note.hidden = users.length === 0;
+        note.textContent = users.length ? "Also used by: " + users.join(", ") : "";
+        updatePreview(color);
+    }
+
+    wheel.addEventListener("input", function () { choose(wheel.value.toUpperCase(), "wheel"); });
+    hexBox.addEventListener("input", function () {
+        let value = hexBox.value.trim();
+        if (value && value[0] !== "#") { value = "#" + value; }
+        const ok = HEX.test(value);
+        hexWarning.hidden = ok || value === "";
+        if (ok) { choose(value.toUpperCase(), "hex"); }
+    });
+
+    // Live warning when the name is already taken.
+    function checkName() {
+        const typed = (nameInput.value || "").trim();
+        const taken = typed !== "" && existingNames.indexOf(typed.toLowerCase()) !== -1;
+        nameWarning.hidden = !taken;
+        nameWarning.textContent = taken ? "A category named \u201c" + typed + "\u201d already exists." : "";
+        nameInput.classList.toggle("is-invalid", taken);
+        updatePreview(colorInput.value);
+    }
+    nameInput.addEventListener("input", checkName);
+
+    // Swap the plain text box for the swatches, and keep what is already saved.
+    document.getElementById("color-fallback").hidden = true;
+    document.getElementById("color-widget").hidden = false;
+
+    let start = (colorInput.value || "").trim();
+    if (!start && form.dataset.suggestColor) {
+        // New category: start with the first preset no other category uses yet.
+        const free = PRESETS.filter(function (p) { return usersOf(p[1]).length === 0; });
+        if (free.length) { start = free[0][1]; }
+    }
+    choose(start);
+    checkName();
+    nameInput.focus();
+
+    // ---- task checklist ----
+    const checklist = document.getElementById("task-checklist");
+    if (checklist) {
+        const items = Array.prototype.slice.call(checklist.querySelectorAll("li"));
+        const search = document.getElementById("task-search");
+        const counter = document.getElementById("task-count");
+        const empty = document.getElementById("task-empty");
+
+        function boxOf(li) { return li.querySelector("input[type=checkbox]"); }
+        function visible() { return items.filter(function (li) { return !li.hidden; }); }
+        function updateCount() {
+            counter.textContent = items.filter(function (li) { return boxOf(li).checked; }).length;
+        }
+        function applyFilter() {
+            const term = search.value.trim().toLowerCase();
+            items.forEach(function (li) { li.hidden = term !== "" && li.dataset.title.indexOf(term) === -1; });
+            empty.hidden = visible().length !== 0;
+        }
+
+        search.addEventListener("input", applyFilter);
+        // Enter in the search box should search, not save the whole form.
+        search.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); } });
+        document.getElementById("task-select-all").addEventListener("click", function () {
+            visible().forEach(function (li) { boxOf(li).checked = true; });
+            updateCount();
+        });
+        document.getElementById("task-clear").addEventListener("click", function () {
+            visible().forEach(function (li) { boxOf(li).checked = false; });
+            updateCount();
+        });
+        checklist.addEventListener("change", updateCount);
+        updateCount();
+    }
+})();
+</script>
 {% endblock %}
