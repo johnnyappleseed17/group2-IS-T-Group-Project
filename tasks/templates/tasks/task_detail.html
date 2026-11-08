@@ -6,5 +6,10 @@
 </head>
 <body>
 <h1>{{ task.title }}</h1>
+{% if task.categories %}
+    {% for category in task.categories.all %}
+        <h2>{{ category }}</h2>
+    {% endfor %}
+{% endif %}
 </body>
 </html>
