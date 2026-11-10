@@ -9,6 +9,8 @@ from django.contrib import messages
 from accounts.models import UserProfile
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views import generic
+from django.utils import timezone
+
 
 from .forms import TaskForm
 from .models import Task, TaskAssignment
@@ -108,7 +110,7 @@ def my_accepted_tasks(request):
         raise PermissionDenied("An approved account is required.")
 
     tasks = (
-        Task.objects.filter(assignments__assignee=request.user)
+        Task.objects.filter(assignments__assignee=request.user, assignments__completed_at__isnull=True)
         .prefetch_related("categories", "assignments")
         .order_by("-is_priority", "due_date", "pk")
     )
@@ -147,3 +149,27 @@ class TaskDetailView(LoginRequiredMixin, generic.DetailView):
     model = Task
     template_name = "tasks/task_detail.html"
     context_object_name = "task"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["assignments"] = self.object.assignments.all()
+        context["done_assignments"] = self.object.assignments.filter(
+            completed_at__isnull=False
+        ).select_related("assignee")
+        return context
+
+def mark_done(request, task_id):
+    assignment = get_object_or_404(
+        TaskAssignment.objects.select_for_update(),
+        task_id=task_id,
+        assignee=request.user,
+    )
+
+    if assignment.completed_at is None:
+        assignment.completed_at = timezone.now()
+        assignment.save(update_fields=["completed_at"])
+        messages.success(request, "Task marked as done.")
+    else:
+        messages.info(request, "You have already marked this task as done.")
+
+    return redirect("tasks:my_accepted_tasks")
