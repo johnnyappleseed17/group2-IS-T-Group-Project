@@ -56,6 +56,7 @@ def calendar_events(request):
     elif profile.role == UserProfile.Role.EMPLOYEE:
         tasks = Task.objects.filter(
             assignments__assignee=request.user,
+            assignments__completed_at__isnull=True,
             is_archived=False,
         ).distinct()
     else:

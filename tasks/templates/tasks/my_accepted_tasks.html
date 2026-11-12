@@ -41,9 +41,13 @@
                                 {% if assignment.completed_at %}
                                     Done
                                 {% else %}
-                                    <form method="post" action="{% url 'tasks:mark_done' task.pk %}">
+                                    <form method="post" action="{% url 'tasks:mark_done' task.pk %}" onsubmit="return confirm('Mark this task as done?');">
                                     {% csrf_token %}
-                                    <button type="submit">Mark done</button>
+                                    <button type="submit" class="link-btn">Mark as done</button>
+                                    </form>
+                                    <form method="post" action="{% url 'tasks:remove_self' task.pk %}" onsubmit="return confirm('Are you certain you want to remove this task?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="link-btn">Remove Task</button>
                                     </form>
                                 {% endif %}
                             {% endif %}

@@ -205,3 +205,24 @@ def mark_done(request, task_id):
         messages.info(request, "You have already marked this task as done.")
 
     return redirect("tasks:my_accepted_tasks")
+
+@login_required
+@require_POST
+def remove_self(request, task_id):
+    try:
+        profile = request.user.profile
+    except UserProfile.DoesNotExist:
+        raise PermissionDenied("An approved account is required.")
+
+    if profile.role != UserProfile.Role.EMPLOYEE or not profile.is_approved:
+        raise PermissionDenied("An approved account is required.")
+    task = get_object_or_404(TaskAssignment.objects.select_for_update(), pk=task_id)
+
+    assignment = get_object_or_404(
+        TaskAssignment,
+        task_id=task_id,
+        assignee=request.user,
+    )
+    assignment.delete()
+    messages.success(request, "You have removed yourself from the task.")
+    return redirect("tasks:my_accepted_tasks")
