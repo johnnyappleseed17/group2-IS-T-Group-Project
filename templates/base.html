@@ -30,6 +30,9 @@
                         <li class="nav-item">
                         <a class="nav-link" href="{% url 'tasks:my_created_tasks' %}">Created Tasks</a>
                         </li>
+                        <li class="nav-item">
+                        <a class="nav-link" href="{% url 'tasks:task_history' %}">Task History</a>
+                        </li>
                     {% elif user.profile.role == 'employee' %}
                         <li class="nav-item">
                         <a class="nav-link" href="{% url 'tasks:my_accepted_tasks' %}">Accepted Tasks</a>

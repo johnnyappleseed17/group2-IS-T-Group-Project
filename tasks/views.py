@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db import transaction
+from django.db.models import Q
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods, require_safe, require_POST
 from django.shortcuts import get_object_or_404, redirect
@@ -31,7 +32,7 @@ def _require_approved_manager(user):
 def my_created_tasks(request):
     _require_approved_manager(request.user)
     tasks = (
-        Task.objects.filter(created_by=request.user)
+        Task.objects.filter(created_by=request.user, is_archived=False)
         .prefetch_related("categories", "assignments")
         .order_by("-is_priority", "due_date", "pk")
     )
@@ -64,7 +65,7 @@ def task_create(request):
 @transaction.atomic
 def task_update(request, task_id):
     _require_approved_manager(request.user)
-    tasks = Task.objects.filter(created_by=request.user)
+    tasks = Task.objects.filter(created_by=request.user, is_archived=False)
     if request.method == "POST":
         tasks = tasks.select_for_update()
     task = get_object_or_404(tasks, pk=task_id)
@@ -79,23 +80,43 @@ def task_update(request, task_id):
 @login_required
 @require_http_methods(["GET", "POST"])
 @transaction.atomic
-def task_delete(request, task_id):
+def task_archive(request, task_id):
     _require_approved_manager(request.user)
-    tasks = Task.objects.filter(created_by=request.user)
+    tasks = Task.objects.filter(created_by=request.user, is_archived=False)
     if request.method == "POST":
         tasks = tasks.select_for_update()
     task = get_object_or_404(tasks, pk=task_id)
     has_assignments = task.assignments.exists()
     if request.method == "POST" and not has_assignments:
-        task.delete()
-        messages.success(request, "Task deleted.")
+        task.is_archived = True
+        task.archived_at = timezone.now()
+        task.save(update_fields=["is_archived", "archived_at"])
+        messages.success(request, "Task archived. You can restore it from Task History.")
         return redirect("tasks:my_created_tasks")
     return render(
         request,
-        "tasks/task_confirm_delete.html",
+        "tasks/task_confirm_archive.html",
         {"task": task, "has_assignments": has_assignments},
         status=409 if request.method == "POST" else 200,
     )
+
+
+@login_required
+@require_POST
+@transaction.atomic
+def task_restore(request, task_id):
+    _require_approved_manager(request.user)
+    task = get_object_or_404(
+        Task.objects.select_for_update(),
+        pk=task_id,
+        created_by=request.user,
+        is_archived=True,
+    )
+    task.is_archived = False
+    task.archived_at = None
+    task.save(update_fields=["is_archived", "archived_at"])
+    messages.success(request, "Task restored. It is back in Created Tasks.")
+    return redirect("tasks:task_history")
 
 
 @login_required
@@ -110,7 +131,7 @@ def my_accepted_tasks(request):
         raise PermissionDenied("An approved account is required.")
 
     tasks = (
-        Task.objects.filter(assignments__assignee=request.user, assignments__completed_at__isnull=True)
+        Task.objects.filter(is_archived=False, assignments__assignee=request.user, assignments__completed_at__isnull=True)
         .prefetch_related("categories", "assignments")
         .order_by("-is_priority", "due_date", "pk")
     )
@@ -149,6 +170,17 @@ class TaskDetailView(LoginRequiredMixin, generic.DetailView):
     model = Task
     template_name = "tasks/task_detail.html"
     context_object_name = "task"
+
+    def get_queryset(self):
+        tasks = super().get_queryset()
+        try:
+            profile = self.request.user.profile
+        except UserProfile.DoesNotExist:
+            return tasks.filter(is_archived=False)
+
+        if profile.role == UserProfile.Role.MANAGER and profile.is_approved:
+            return tasks.filter(Q(is_archived=False) | Q(created_by=self.request.user))
+        return tasks.filter(is_archived=False)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

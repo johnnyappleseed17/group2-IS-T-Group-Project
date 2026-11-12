@@ -6,7 +6,7 @@ from django.shortcuts import render
 from django.views.decorators.http import require_safe
 
 from accounts.models import UserProfile
-from .models import TaskAssignment
+from .models import Task, TaskAssignment
 
 
 @login_required
@@ -17,7 +17,23 @@ def task_history(request):
     except UserProfile.DoesNotExist:
         raise PermissionDenied("You are not on an approved account.")
 
-    if profile.role != UserProfile.Role.EMPLOYEE or not profile.is_approved:
+    if not profile.is_approved:
+        raise PermissionDenied("You need an approved account.")
+
+    if profile.role == UserProfile.Role.MANAGER:
+        tasks = (
+            Task.objects.filter(created_by=request.user, is_archived=True)
+            .prefetch_related("categories")
+            .order_by("-archived_at", "-pk")
+        )
+        page_obj = Paginator(tasks, 10).get_page(request.GET.get("page"))
+        return render(
+            request,
+            "tasks/archived_tasks.html",
+            {"tasks": page_obj.object_list, "page_obj": page_obj},
+        )
+
+    if profile.role != UserProfile.Role.EMPLOYEE:
         raise PermissionDenied("You need an approved account.")
 
     assignments = (

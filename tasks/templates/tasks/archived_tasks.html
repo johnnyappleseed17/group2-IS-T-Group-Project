@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}My Task History{% endblock %}
+
+{% block content %}
+<h1>My Task History</h1>
+<p>Archived tasks are saved here. Restore a task to put it back in Created Tasks.</p>
+<p><a href="{% url 'tasks:my_created_tasks' %}">Back to Created Tasks</a></p>
+
+{% if tasks %}
+<p>Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} archived task{{ page_obj.paginator.count|pluralize }}.</p>
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <caption>Your archived tasks, most recently archived first.</caption>
+        <thead>
+            <tr>
+                <th scope="col">Task</th>
+                <th scope="col">Description</th>
+                <th scope="col">Categories</th>
+                <th scope="col">Due date</th>
+                <th scope="col">Archived on</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for task in tasks %}
+            <tr>
+                <th scope="row"><a href="{% url 'tasks:task_detail' task.pk %}">{{ task.title }}</a></th>
+                <td>{{ task.description|linebreaksbr }}</td>
+                <td>{% for category in task.categories.all %}{{ category.name }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</td>
+                <td>{{ task.due_date|date:"Y-m-d" }}</td>
+                <td>{{ task.archived_at|date:"Y-m-d H:i" }}</td>
+                <td>
+                    <form method="post" action="{% url 'tasks:task_restore' task.pk %}">
+                        {% csrf_token %}
+                        <button class="btn btn-secondary" type="submit">Restore task</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% if page_obj.has_other_pages %}
+<nav aria-label="Archive pages">
+    {% if page_obj.has_previous %}
+    <a href="?page=1">First</a>
+    <a href="?page={{ page_obj.previous_page_number }}" rel="prev">Previous</a>
+    {% endif %}
+    <span aria-current="page">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}" rel="next">Next</a>
+    <a href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+    {% endif %}
+</nav>
+{% endif %}
+{% else %}
+<p>You have no archived tasks.</p>
+{% endif %}
+{% endblock %}

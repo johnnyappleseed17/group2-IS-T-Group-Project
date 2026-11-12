@@ -68,10 +68,12 @@ class TaskHistoryTests(TestCase):
         response = self.client.get(reverse("tasks:task_history"))
         self.assertContains(response, "You haven't completed any tasks yet.")
 
-    def test_manager_cannot_open_history(self):
+    def test_manager_history_uses_the_archive_page(self):
         self.client.login(username="boss", password=PASSWORD)
         response = self.client.get(reverse("tasks:task_history"))
-        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "tasks/archived_tasks.html")
+        self.assertEqual(list(response.context["tasks"]), [])
 
     def test_login_required(self):
         response = self.client.get(reverse("tasks:task_history"))

@@ -2,6 +2,10 @@
 <body>
 {% block content %}
 <h1>{{ task.title }} Details</h1>
+{% if task.is_archived %}
+<p class="alert alert-secondary">This task is archived.</p>
+<p><a href="{% url 'tasks:task_history' %}">Back to Task History</a></p>
+{% endif %}
 {% with categories=task.categories.all %}
     {% if categories %}
         <h2>Categories</h2>

@@ -94,7 +94,7 @@ class MyCreatedTasksTests(TestCase):
         new_manager = self.create_manager("new_manager")
         self.client.force_login(new_manager)
         response = self.client.get(self.url)
-        self.assertContains(response, "You haven't created any tasks yet.")
+        self.assertContains(response, "You have no unarchived tasks.")
         self.assertQuerySetEqual(response.context["tasks"], [])
         self.assertNotContains(response, escape(self.other_task.title))
 

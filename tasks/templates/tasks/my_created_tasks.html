@@ -5,11 +5,12 @@
 {% block content %}
         <h1>My Created Tasks</h1>
         <p><a class="btn btn-primary" href="{% url 'tasks:task_create' %}">Create task</a></p>
+        <p><a href="{% url 'tasks:task_history' %}">View archived tasks in Task History</a></p>
         {% if tasks %}
         <p>Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} task{{ page_obj.paginator.count|pluralize }}.</p>
         <div class="table-responsive">
         <table class="table table-striped align-middle">
-            <caption>Tasks you created, ordered by due date.</caption>
+            <caption>Unarchived tasks you created, ordered by priority and due date.</caption>
             <thead>
                 <tr>
                     <th scope="col">Task</th>
@@ -39,7 +40,7 @@
                     <td>{{ task.status|capfirst }}</td>
                     <td>
                         <a href="{% url 'tasks:task_update' task.pk %}">Edit</a>
-                        <a href="{% url 'tasks:task_delete' task.pk %}">Delete</a>
+                        <a href="{% url 'tasks:task_archive' task.pk %}">Archive</a>
                     </td>
                 </tr>
                 {% endfor %}
@@ -60,6 +61,6 @@
         </nav>
         {% endif %}
         {% else %}
-        <p>You haven't created any tasks yet.</p>
+        <p>You have no unarchived tasks.</p>
         {% endif %}
 {% endblock %}

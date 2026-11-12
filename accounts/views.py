@@ -50,11 +50,13 @@ def calendar_events(request):
     if profile.role == UserProfile.Role.MANAGER:
         tasks = Task.objects.filter(
             created_by=request.user,
+            is_archived=False,
             assignments__isnull=False,
         ).distinct()
     elif profile.role == UserProfile.Role.EMPLOYEE:
         tasks = Task.objects.filter(
             assignments__assignee=request.user,
+            is_archived=False,
         ).distinct()
     else:
         raise PermissionDenied
