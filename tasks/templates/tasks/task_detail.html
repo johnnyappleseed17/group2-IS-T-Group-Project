@@ -1,15 +1,42 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Tasks</title>
-</head>
+{% extends 'base.html' %}
 <body>
-<h1>{{ task.title }}</h1>
-{% if task.categories %}
-    {% for category in task.categories.all %}
-        <h2>{{ category }}</h2>
+{% block content %}
+<h1>{{ task.title }} Details</h1>
+{% if task.is_archived %}
+<p class="alert alert-secondary">This task is archived.</p>
+<p><a href="{% url 'tasks:task_history' %}">Back to Task History</a></p>
+{% endif %}
+{% with categories=task.categories.all %}
+    {% if categories %}
+        <h2>Categories</h2>
+        <ul>
+            {% for category in categories %}
+                <li>{{ category }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <h2>This task has no assigned categories</h2>
+    {% endif %}
+{% endwith %}
+
+<h2>Assigned Employees</h2>
+<ul>
+    {% for assignment in assignments %}
+        <li>{{ assignment.assignee }} accepted this task on {{ assignment.claimed_at }}</li>
+    {% empty %}
+        <p>No employees accepted this assignment</p>
     {% endfor %}
+</ul>
+
+{% if done_assignments %}
+<h2>Done Employees</h2>
+<ul>
+    {% for assignment in done_assignments %}
+        <li>{{ assignment.assignee }} completed this task on {{ assignment.completed_at }}</li>
+    {% empty %}
+        <p>No employees have marked their portion done yet.</p>
+    {% endfor %}
+</ul>
 {% endif %}
 </body>
-</html>
+{% endblock %}

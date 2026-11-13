@@ -35,6 +35,24 @@
                     <td>{% for category in task.categories.all %}{{ category.name }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</td>
                     <td>{{ task.claimed_count }} / {{ task.employees_needed }}</td>
                     <td>{{ task.status|capfirst }}</td>
+                    <td>
+                        {% for assignment in task.assignments.all %}
+                            {% if assignment.assignee_id == user.id %}
+                                {% if assignment.completed_at %}
+                                    Done
+                                {% else %}
+                                    <form method="post" action="{% url 'tasks:mark_done' task.pk %}" onsubmit="return confirm('Mark this task as done?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="link-btn">Mark as done</button>
+                                    </form>
+                                    <form method="post" action="{% url 'tasks:remove_self' task.pk %}" onsubmit="return confirm('Are you certain you want to remove this task?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="link-btn">Remove Task</button>
+                                    </form>
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

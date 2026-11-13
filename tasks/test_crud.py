@@ -50,7 +50,7 @@ class TaskCrudTests(TestCase):
         self.create_url = reverse("tasks:task_create")
         self.list_url = reverse("tasks:my_created_tasks")
         self.edit_url = reverse("tasks:task_update", args=[self.task.pk])
-        self.delete_url = reverse("tasks:task_delete", args=[self.task.pk])
+        self.archive_url = reverse("tasks:task_archive", args=[self.task.pk])
 
     def task_data(self, **changes):
         data = {
@@ -73,7 +73,7 @@ class TaskCrudTests(TestCase):
     def test_anonymous_forms_and_mutations_require_login(self):
         self.client.logout()
         original_count = Task.objects.count()
-        for url in (self.create_url, self.edit_url, self.delete_url):
+        for url in (self.create_url, self.edit_url, self.archive_url):
             for method in ("get", "post"):
                 with self.subTest(url=url, method=method):
                     data = self.task_data() if method == "post" else {}
@@ -91,7 +91,7 @@ class TaskCrudTests(TestCase):
         original_count = Task.objects.count()
         for user in (self.employee, self.unapproved_manager, self.no_profile):
             self.client.force_login(user)
-            for url in (self.create_url, self.edit_url, self.delete_url):
+            for url in (self.create_url, self.edit_url, self.archive_url):
                 for method in ("get", "post"):
                     with self.subTest(user=user.username, url=url, method=method):
                         response = getattr(self.client, method)(url, self.task_data())
@@ -103,7 +103,7 @@ class TaskCrudTests(TestCase):
     def test_other_managers_and_missing_tasks_return_404_without_changes(self):
         original_count = Task.objects.count()
         for task_id in (self.other_task.pk, self.other_task.pk + 1000):
-            for name in ("tasks:task_update", "tasks:task_delete"):
+            for name in ("tasks:task_update", "tasks:task_archive"):
                 url = reverse(name, args=[task_id])
                 for method in ("get", "post"):
                     with self.subTest(task_id=task_id, name=name, method=method):
@@ -114,7 +114,7 @@ class TaskCrudTests(TestCase):
         self.assertEqual(self.other_task.title, "Other manager's confidential task")
 
     def test_crud_rejects_unsupported_http_methods(self):
-        for url in (self.create_url, self.edit_url, self.delete_url):
+        for url in (self.create_url, self.edit_url, self.archive_url):
             for method in ("put", "patch", "delete"):
                 with self.subTest(url=url, method=method):
                     response = getattr(self.client, method)(url)
@@ -249,42 +249,51 @@ class TaskCrudTests(TestCase):
             self.client.post(self.edit_url, self.task_data(employees_needed="2"))
         )
 
-    def test_delete_get_is_a_confirmation_and_does_not_delete(self):
-        response = self.client.get(self.delete_url)
+    def test_archive_get_is_a_confirmation_and_does_not_archive(self):
+        response = self.client.get(self.archive_url)
         self.assertContains(response, self.task.title)
         self.assertContains(response, 'method="post"')
-        self.assertTrue(Task.objects.filter(pk=self.task.pk).exists())
+        self.task.refresh_from_db()
+        self.assertFalse(self.task.is_archived)
+        self.assertIsNone(self.task.archived_at)
 
-    def test_delete_post_removes_only_the_unclaimed_task_and_reports_success(self):
-        response = self.client.post(self.delete_url)
+    def test_archive_post_archives_only_the_unclaimed_task_and_reports_success(self):
+        response = self.client.post(self.archive_url)
         self.assert_success_redirect(response)
-        self.assertFalse(Task.objects.filter(pk=self.task.pk).exists())
-        self.assertTrue(Task.objects.filter(pk=self.other_task.pk).exists())
+        self.task.refresh_from_db()
+        self.assertTrue(self.task.is_archived)
+        self.assertIsNotNone(self.task.archived_at)
+        self.other_task.refresh_from_db()
+        self.assertFalse(self.other_task.is_archived)
         self.assertTrue(Category.objects.filter(pk=self.category.pk).exists())
 
-    def test_even_completed_assignments_prevent_hard_deletion(self):
+    def test_even_completed_assignments_prevent_archiving(self):
         assignment = TaskAssignment.objects.create(
             task=self.task, assignee=self.employee, completed_at=timezone.now()
         )
-        response = self.client.post(self.delete_url)
+        response = self.client.post(self.archive_url)
         self.assertContains(response, f'href="{self.edit_url}"', status_code=409)
-        self.assertTrue(Task.objects.filter(pk=self.task.pk).exists())
+        self.task.refresh_from_db()
+        self.assertFalse(self.task.is_archived)
+        self.assertIsNone(self.task.archived_at)
         self.assertTrue(TaskAssignment.objects.filter(pk=assignment.pk).exists())
         self.assertRegex(response.content.decode().lower(), r"(assign|claim|accept)")
 
-    def test_delete_rechecks_claims_added_after_the_confirmation_page(self):
-        self.assertEqual(self.client.get(self.delete_url).status_code, 200)
+    def test_archive_rechecks_claims_added_after_the_confirmation_page(self):
+        self.assertEqual(self.client.get(self.archive_url).status_code, 200)
         assignment = TaskAssignment.objects.create(task=self.task, assignee=self.employee)
-        response = self.client.post(self.delete_url)
+        response = self.client.post(self.archive_url)
         self.assertEqual(response.status_code, 409)
-        self.assertTrue(Task.objects.filter(pk=self.task.pk).exists())
+        self.task.refresh_from_db()
+        self.assertFalse(self.task.is_archived)
+        self.assertIsNone(self.task.archived_at)
         self.assertTrue(TaskAssignment.objects.filter(pk=assignment.pk).exists())
 
     def test_crud_posts_require_csrf_and_valid_token_allows_submission(self):
         client = Client(enforce_csrf_checks=True)
         client.force_login(self.manager)
         original_count = Task.objects.count()
-        for url in (self.create_url, self.edit_url, self.delete_url):
+        for url in (self.create_url, self.edit_url, self.archive_url):
             with self.subTest(url=url):
                 self.assertEqual(client.post(url, self.task_data()).status_code, 403)
         self.assertEqual(Task.objects.count(), original_count)
@@ -304,7 +313,7 @@ class TaskCrudTests(TestCase):
         self.assertContains(dashboard, f'href="{self.list_url}"')
         self.assertContains(dashboard, f'href="{self.create_url}"')
         response = self.client.get(self.list_url)
-        for url in (self.create_url, self.edit_url, self.delete_url):
+        for url in (self.create_url, self.edit_url, self.archive_url):
             self.assertContains(response, f'href="{url}"')
         self.assertNotContains(
             response, f'href="{reverse("tasks:task_update", args=[self.other_task.pk])}"'
@@ -355,7 +364,7 @@ class TaskCrudTests(TestCase):
         self.assertNotContains(accepted, "Prepare the monthly report")
         self.client.force_login(self.manager)
         self.assertEqual(
-            self.client.post(reverse("tasks:task_delete", args=[task.pk])).status_code, 409
+            self.client.post(reverse("tasks:task_archive", args=[task.pk])).status_code, 409
         )
 
     def test_dashboard_requires_login_and_an_approved_known_profile(self):
