@@ -37,7 +37,7 @@
                       </td>
                     <td>{{ task.description|linebreaksbr }}</td>
                     <td><time datetime="{{ task.due_date|date:'Y-m-d' }}">{{ task.due_date|date:"Y-m-d" }}</time></td>
-                    <td>{% for category in task.categories.all %}{{ category.name }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}</td>
+                    <td>{% include "tasks/_category_pills.html" with categories=task.categories.all %}</td>
                     <td>{{ task.claimed_count }} / {{ task.employees_needed }}</td>
                     <td>{{ task.status|capfirst }}</td>
                     <td>

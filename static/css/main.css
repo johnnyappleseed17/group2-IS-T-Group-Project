@@ -375,3 +375,26 @@
     background-color: #e9ecef;
     color: #495057;
 }
+
+/* Category chips (task form) */
+.chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { position: relative; display: inline-block; margin: 0; cursor: pointer; }
+.chip input { position: absolute; opacity: 0; width: 0; height: 0; }
+.chip-face {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 12px; border-radius: 999px;
+    border: 1.5px solid var(--chip-color);
+    background: #fff; color: #212529; font-size: 0.9rem;
+    transition: background-color 0.15s, box-shadow 0.15s;
+}
+.chip-face::before {
+    content: ""; width: 10px; height: 10px; border-radius: 50%;
+    background: var(--chip-color);
+}
+.chip:hover .chip-face { box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25); }
+.chip input:checked + .chip-face { background: var(--chip-color); color: var(--chip-text); }
+.chip input:checked + .chip-face::before {
+    content: "\2713"; width: auto; height: auto;
+    background: none; font-weight: 700; font-size: 0.85rem; line-height: 1;
+}
+.chip input:focus-visible + .chip-face { outline: 3px solid rgba(13, 110, 253, 0.5); outline-offset: 2px; }

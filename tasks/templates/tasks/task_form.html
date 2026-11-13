@@ -4,10 +4,51 @@
 
 {% block content %}
 <h1>{% if task %}Edit Task{% else %}Create Task{% endif %}</h1>
-<form method="post">
+<form method="post" class="task-form">
     {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">{% if task %}Save changes{% else %}Create task{% endif %}</button>
-    <a href="{% url 'tasks:my_created_tasks' %}">Cancel</a>
+    {{ form.non_field_errors }}
+
+    {% for field in form %}
+    {% if field.name == "categories" %}
+    <div class="mb-4">
+        <div class="form-label fw-semibold">Categories <span class="text-muted fw-normal">(optional)</span></div>
+        {% if field.field.queryset %}
+        <div class="chip-group" role="group" aria-label="Categories">
+            {% for checkbox in field %}
+            {% with category=checkbox.data.value.instance %}
+            <label class="chip" for="{{ checkbox.id_for_label }}">
+                {{ checkbox.tag }}
+                <span class="chip-face" style="--chip-color: {{ category.color|default:'#6c757d' }}; --chip-text: {{ category.text_color|default:'#ffffff' }};">{{ category.name }}</span>
+            </label>
+            {% endwith %}
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="form-text">No categories yet. <a href="{% url 'tasks:category_create' %}">Create one</a>.</p>
+        {% endif %}
+        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+        {{ field.errors }}
+    </div>
+    {% elif field.name == "is_priority" %}
+    <div class="mb-4 form-check">
+        {{ field }}
+        <label class="form-check-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+        {{ field.errors }}
+    </div>
+    {% else %}
+    <div class="mb-4">
+        <label class="form-label fw-semibold" for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+        {{ field.errors }}
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    <div class="d-flex align-items-center gap-3 flex-wrap form-actions">
+        <button type="submit" class="btn btn-primary">{% if task %}Save changes{% else %}Create task{% endif %}</button>
+        <a class="btn btn-link" href="{% url 'tasks:my_created_tasks' %}">Cancel</a>
+    </div>
 </form>
 {% endblock %}
