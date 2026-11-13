@@ -17,12 +17,12 @@ class TaskForm(forms.ModelForm):
             "employees_needed": forms.NumberInput(
                 attrs={"min": 1, "class": "form-control"}
             ),
-            "categories": forms.SelectMultiple(attrs={"class": "form-select"}),
+            "categories": forms.CheckboxSelectMultiple(),
             "is_priority": forms.CheckboxInput(attrs={"class": "form-check-input"}),
         }
         help_texts = {
             "employees_needed": "Total number of people needed for this task.",
-            "categories": "Optional. Hold Ctrl (Windows) or Command (Mac) to select multiple categories.",
+            "categories": "Optional. Click a category to add or remove it.",
             "is_priority": "Priority tasks are shown first in task lists.",
         }
 
