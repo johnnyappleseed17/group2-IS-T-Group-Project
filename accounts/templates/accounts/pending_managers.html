@@ -27,11 +27,11 @@
         <td>{{ profile.user.email|default:"-" }}</td>
         <td>{{ profile.user.date_joined|date:"Y-m-d" }}</td>
         <td>
-          <form method="post" action="{% url 'approve_manager' profile.pk %}" class="d-inline">
+          <form method="post" action="{% url 'approve_manager' profile.pk %}" class="d-inline" onsubmit="return confirm('Approve {{ profile.user.username|escapejs }} as a manager?');">
             {% csrf_token %}
             <button type="submit" class="btn btn-sm btn-success">Approve</button>
           </form>
-          <form method="post" action="{% url 'decline_manager' profile.pk %}" class="d-inline">
+          <form method="post" action="{% url 'decline_manager' profile.pk %}" class="d-inline" onsubmit="return confirm('Decline {{ profile.user.username|escapejs }}\'s manager request? They will stay an employee.');">
             {% csrf_token %}
             <button type="submit" class="btn btn-sm btn-outline-danger">Decline</button>
           </form>

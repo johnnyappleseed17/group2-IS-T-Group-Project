@@ -398,3 +398,10 @@
     background: none; font-weight: 700; font-size: 0.85rem; line-height: 1;
 }
 .chip input:focus-visible + .chip-face { outline: 3px solid rgba(13, 110, 253, 0.5); outline-offset: 2px; }
+/* navbar: highlight the page you're on */
+.navbar-nav .nav-link.active {
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 8px;
+    text-decoration-thickness: 2px;
+}
