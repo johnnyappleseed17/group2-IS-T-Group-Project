@@ -9,10 +9,10 @@
           integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
 </head>
- <body>
+  <body>
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
 <div class="container-fluid">
-        <a class="navbar-brand" >Manager App</a>
+        <a class="navbar-brand" href="{% url 'index' %}">Task Manager</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
                 aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -20,27 +20,24 @@
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
-                    <a class="nav-link" href="{% url 'index' %}">Home</a>
+                    <a class="nav-link{% if request.resolver_match.view_name == 'index' %} active{% endif %}"{% if request.resolver_match.view_name == 'index' %} aria-current="page"{% endif %} href="{% url 'index' %}">Home</a>
                 </li>
                 <li class="nav-item">
-                     <a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a>
+                    <a class="nav-link{% if request.resolver_match.view_name == 'dashboard' %} active{% endif %}"{% if request.resolver_match.view_name == 'dashboard' %} aria-current="page"{% endif %} href="{% url 'dashboard' %}">Dashboard</a>
                 </li>
                 {% if user.is_authenticated %}
                     {% if user.profile.role == 'manager' %}
                         <li class="nav-item">
-                        <a class="nav-link" href="{% url 'tasks:my_created_tasks' %}">Created Tasks</a>
-                        </li>
-                        <li class="nav-item">
-                        <a class="nav-link" href="{% url 'tasks:task_history' %}">Task History</a>
+                            <a class="nav-link{% if request.resolver_match.view_name == 'tasks:my_created_tasks' %} active{% endif %}"{% if request.resolver_match.view_name == 'tasks:my_created_tasks' %} aria-current="page"{% endif %} href="{% url 'tasks:my_created_tasks' %}">Created Tasks</a>
                         </li>
                     {% elif user.profile.role == 'employee' %}
                         <li class="nav-item">
-                        <a class="nav-link" href="{% url 'tasks:my_accepted_tasks' %}">Accepted Tasks</a>
-                        </li>
-                        <li class="nav-item">
-                        <a class="nav-link" href="{% url 'tasks:task_history' %}">Task History</a>
+                            <a class="nav-link{% if request.resolver_match.view_name == 'tasks:my_accepted_tasks' %} active{% endif %}"{% if request.resolver_match.view_name == 'tasks:my_accepted_tasks' %} aria-current="page"{% endif %} href="{% url 'tasks:my_accepted_tasks' %}">Accepted Tasks</a>
                         </li>
                     {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link{% if request.resolver_match.view_name == 'tasks:task_history' %} active{% endif %}"{% if request.resolver_match.view_name == 'tasks:task_history' %} aria-current="page"{% endif %} href="{% url 'tasks:task_history' %}">Task History</a>
+                    </li>
                 {% endif %}
             </ul>
         </div>
