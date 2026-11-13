@@ -59,6 +59,7 @@
         {% endif %}
         <ul class="nav navbar-nav ml-auto">
         {% if user.is_authenticated %}
+           <li><a class="nav-link" href="{% url 'notification_email' %}">Email</a></li>
            <li>
               <form action="{% url 'logout' %}" method="post">
                  {% csrf_token %}

@@ -1,13 +1,14 @@
-from django.shortcuts import render
+from django.contrib import messages
+from django.shortcuts import redirect, render
 from tasks.models import Task
 from django.core.paginator import Paginator
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
-from accounts.models import UserProfile
 from django.urls import reverse
 
+from .forms import NotificationEmailForm
 from .models import UserProfile
 
 @login_required
@@ -35,6 +36,21 @@ def dashboard(request):
             "accounts/employee_dash.html",
             {"tasks": page_obj.object_list, "page_obj": page_obj},
         )
+
+@login_required
+def notification_email(request):
+    """Save the address that receives this person's deadline reminders."""
+    form = NotificationEmailForm(
+        request.POST or None,
+        initial={"email": request.user.email},
+    )
+    if request.method == "POST" and form.is_valid():
+        request.user.email = form.cleaned_data["email"]
+        request.user.save(update_fields=["email"])
+        messages.success(request, "Deadline reminders will be sent to this email address.")
+        return redirect("dashboard")
+    return render(request, "accounts/notification_email.html", {"form": form})
+
 
 @login_required
 @require_GET

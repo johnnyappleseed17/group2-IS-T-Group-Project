@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Notification email{% endblock %}
+
+{% block content %}
+<h1>Notification email</h1>
+<p>Deadline reminders are sent to the address you enter here.</p>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Save email</button>
+</form>
+{% endblock %}

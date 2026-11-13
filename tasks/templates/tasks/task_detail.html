@@ -1,11 +1,34 @@
-{% extends 'base.html' %}
-<body>
+{% extends "base.html" %}
+
+{% block title %}{{ task.title }}{% endblock %}
+
 {% block content %}
-<h1>{{ task.title }} Details</h1>
+<h1>
+    {{ task.title }} Details
+    {% if task.is_priority %}<span class="badge text-bg-danger">Priority</span>{% endif %}
+</h1>
 {% if task.is_archived %}
 <p class="alert alert-secondary">This task is archived.</p>
 <p><a href="{% url 'tasks:task_history' %}">Back to Task History</a></p>
 {% endif %}
+
+<p>{{ task.description|linebreaksbr }}</p>
+
+<dl>
+    <dt>Due date</dt>
+    <dd>
+        <span class="due-color-dot due-color-{{ task.due_color }}"
+              role="img"
+              aria-label="Timeline status: {{ task.due_color }}"
+              title="{{ task.due_color|capfirst }}"></span>
+        <time datetime="{{ task.due_date|date:'Y-m-d' }}">{{ task.due_date|date:"Y-m-d" }}</time>
+    </dd>
+    <dt>People assigned / needed</dt>
+    <dd>{{ task.claimed_count }} / {{ task.employees_needed }}</dd>
+    <dt>Claimed status</dt>
+    <dd>{{ task.status|capfirst }}</dd>
+</dl>
+
 {% with categories=task.categories.all %}
     {% if categories %}
         <h2>Categories</h2>
@@ -38,5 +61,17 @@
     {% endfor %}
 </ul>
 {% endif %}
-</body>
+
+<p>
+    {% if is_owner and not task.is_archived %}
+        <a href="{% url 'tasks:task_update' task.pk %}">Edit</a>
+        <a href="{% url 'tasks:task_archive' task.pk %}">Archive</a>
+    {% endif %}
+</p>
+{% if can_accept %}
+<form method="post" action="{% url 'tasks:accept_task' task.pk %}">
+    {% csrf_token %}
+    <button type="submit">Accept task</button>
+</form>
+{% endif %}
 {% endblock %}

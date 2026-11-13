@@ -5,6 +5,7 @@ from . import approval_views, views
 
 urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('email/', views.notification_email, name='notification_email'),
     path("calendar-events/", views.calendar_events, name="calendar_events"),
     path("approvals/", approval_views.pending_managers, name="pending_managers"),
     path("approvals/<int:profile_id>/approve/", approval_views.approve_manager, name="approve_manager"),

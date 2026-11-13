@@ -15,6 +15,7 @@ from django.utils import timezone
 
 from .forms import TaskForm
 from .models import Task, TaskAssignment
+from .reminders import send_due_date_reminders
 
 
 def _require_approved_manager(user):
@@ -55,6 +56,7 @@ def task_create(request):
             task.created_by = request.user
             task.save()
             form.save_m2m()
+            send_due_date_reminders(task)
         messages.success(request, "Task created.")
         return redirect("tasks:my_created_tasks")
     return render(request, "tasks/task_form.html", {"form": form, "task": None})
@@ -71,7 +73,10 @@ def task_update(request, task_id):
     task = get_object_or_404(tasks, pk=task_id)
     form = TaskForm(request.POST if request.method == "POST" else None, instance=task)
     if request.method == "POST" and form.is_valid():
-        form.save()
+        previous_due = task.due_date
+        task = form.save()
+        if task.due_date != previous_due:
+            send_due_date_reminders(task)
         messages.success(request, "Task updated.")
         return redirect("tasks:my_created_tasks")
     return render(request, "tasks/task_form.html", {"form": form, "task": task})
@@ -163,6 +168,7 @@ def accept_task(request, task_id):
         messages.error(request, "This task has no spots left.")
     else:
         TaskAssignment.objects.create(task=task, assignee=request.user)
+        send_due_date_reminders(task)
         messages.success(request, "You accepted the task.")
     return redirect("tasks:my_accepted_tasks")
 
@@ -171,8 +177,20 @@ class TaskDetailView(LoginRequiredMixin, generic.DetailView):
     template_name = "tasks/task_detail.html"
     context_object_name = "task"
 
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return super().dispatch(request, *args, **kwargs)
+        try:
+            profile = request.user.profile
+        except UserProfile.DoesNotExist:
+            profile = None
+        if profile is None or not profile.is_approved:
+            get_object_or_404(self.get_queryset(), pk=kwargs["pk"])
+            raise PermissionDenied("An approved account is required.")
+        return super().dispatch(request, *args, **kwargs)
+
     def get_queryset(self):
-        tasks = super().get_queryset()
+        tasks = Task.objects.prefetch_related("categories", "assignments__assignee")
         try:
             profile = self.request.user.profile
         except UserProfile.DoesNotExist:
@@ -188,6 +206,20 @@ class TaskDetailView(LoginRequiredMixin, generic.DetailView):
         context["done_assignments"] = self.object.assignments.filter(
             completed_at__isnull=False
         ).select_related("assignee")
+        task = context["task"]
+        user = self.request.user
+        profile = user.profile
+        already_accepted = task.assignments.filter(assignee=user).exists()
+        context["is_owner"] = (
+            profile.role == UserProfile.Role.MANAGER and task.created_by_id == user.id
+        )
+        context["can_accept"] = (
+            profile.role == UserProfile.Role.EMPLOYEE
+            and not task.is_archived
+            and not task.is_finished
+            and not task.is_full
+            and not already_accepted
+        )
         return context
 
 def mark_done(request, task_id):
@@ -208,6 +240,7 @@ def mark_done(request, task_id):
 
 @login_required
 @require_POST
+@transaction.atomic
 def remove_self(request, task_id):
     try:
         profile = request.user.profile
@@ -216,10 +249,9 @@ def remove_self(request, task_id):
 
     if profile.role != UserProfile.Role.EMPLOYEE or not profile.is_approved:
         raise PermissionDenied("An approved account is required.")
-    task = get_object_or_404(TaskAssignment.objects.select_for_update(), pk=task_id)
 
     assignment = get_object_or_404(
-        TaskAssignment,
+        TaskAssignment.objects.select_for_update(),
         task_id=task_id,
         assignee=request.user,
     )

@@ -123,6 +123,44 @@ class Task(models.Model):
         return "green"
 
 
+class DeadlineReminder(models.Model):
+    """One sent reminder for a task, person, and due date.
+
+    Keeping this row stops the same reminder from being emailed again
+    the next time the reminder command runs.
+    """
+
+    class Kind(models.TextChoices):
+        DUE_DATE = "due_date", "Due date"
+        IN_3_DAYS = "in_3_days", "3 days before"
+        IN_2_DAYS = "in_2_days", "2 days before"
+        IN_1_DAY = "in_1_day", "1 day before"
+        DUE_TODAY = "due_today", "Due today"
+        DUE_SOON = "due_soon", "Due soon"
+        OVERDUE = "overdue", "Overdue"
+
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name="deadline_reminders")
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="deadline_reminders",
+    )
+    kind = models.CharField(max_length=20, choices=Kind.choices)
+    due_date = models.DateField()
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["task", "recipient", "kind", "due_date"],
+                name="unique_deadline_reminder",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.kind} for {self.recipient} on {self.task}"
+
+
 class TaskAssignment(models.Model):
     task = models.ForeignKey(
         Task,

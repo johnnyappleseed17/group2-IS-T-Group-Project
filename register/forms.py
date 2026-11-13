@@ -4,7 +4,10 @@ from django.contrib.auth.models import User
 
 
 class RegisterForm(UserCreationForm):
-    email = forms.EmailField()
+    email = forms.EmailField(
+        label="Email",
+        help_text="Password reset links and task deadline reminders are sent to this address.",
+    )
     want_manager = forms.BooleanField(
         required=False,
         label="I want to be a manager",

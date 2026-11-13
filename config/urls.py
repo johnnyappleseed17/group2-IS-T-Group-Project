@@ -20,10 +20,17 @@ from django.contrib.auth import views as auth_views
 from . import views
 from django.views.generic import TemplateView
 
+from accounts.forms import UserEmailPasswordResetForm
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.index, name='index'),
     path('base/', views.base, name='base'),
+    path(
+        'accounts/password_reset/',
+        auth_views.PasswordResetView.as_view(form_class=UserEmailPasswordResetForm),
+        name='password_reset',
+    ),
     path('accounts/', include('django.contrib.auth.urls')),
     path('accounts/', include('accounts.urls')),
     path('tasks/', include('tasks.urls')),
