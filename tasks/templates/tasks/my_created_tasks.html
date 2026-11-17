@@ -6,6 +6,7 @@
         <h1>My Created Tasks</h1>
         <p><a class="btn btn-primary" href="{% url 'tasks:task_create' %}">Create task</a></p>
         <p><a href="{% url 'tasks:task_history' %}">View archived tasks in Task History</a></p>
+        {% include "tasks/_filter_bar.html" %}
         {% if tasks %}
         <p>Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} task{{ page_obj.paginator.count|pluralize }}.</p>
         <div class="table-responsive">
@@ -47,20 +48,12 @@
             </tbody>
         </table>
         </div>
-        {% if page_obj.has_other_pages %}
-        <nav aria-label="Task pages">
-            {% if page_obj.has_previous %}
-            <a href="?page=1">First</a>
-            <a href="?page={{ page_obj.previous_page_number }}" rel="prev">Previous</a>
-            {% endif %}
-            <span aria-current="page">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-            {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}" rel="next">Next</a>
-            <a href="?page={{ page_obj.paginator.num_pages }}">Last</a>
-            {% endif %}
-        </nav>
-        {% endif %}
+        {% include "tasks/_page_links.html" %}
+        {% else %}
+        {% if has_filters %}
+        <p>No tasks match your filters. <a href="?">Clear the filters</a>.</p>
         {% else %}
         <p>You have no unarchived tasks.</p>
+        {% endif %}
         {% endif %}
 {% endblock %}
