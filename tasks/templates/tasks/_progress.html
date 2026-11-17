@@ -1,0 +1,8 @@
+{% with claimed=task.claimed_count needed=task.employees_needed %}
+<div class="d-flex align-items-center gap-2 progress-cell">
+    <div class="progress flex-grow-1" role="progressbar" aria-label="People assigned" aria-valuenow="{{ claimed }}" aria-valuemin="0" aria-valuemax="{{ needed }}">
+        <div class="progress-bar{% if claimed >= needed %} bg-success{% endif %}" style="width: {% widthratio claimed needed 100 %}%"></div>
+    </div>
+    <span class="small text-nowrap">{{ claimed }} / {{ needed }}</span>
+</div>
+{% endwith %}

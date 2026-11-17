@@ -1,0 +1,1 @@
+<time datetime="{{ task.due_date|date:'Y-m-d' }}">{{ task.due_date|date:"Y-m-d" }}</time>{% if task.is_overdue %} <span class="badge badge-overdue">Overdue</span>{% endif %}

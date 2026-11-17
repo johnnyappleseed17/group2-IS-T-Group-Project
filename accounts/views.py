@@ -63,18 +63,31 @@ def calendar_events(request):
     if not profile.is_approved:
         raise PermissionDenied
 
+    available_ids = set()
     if profile.role == UserProfile.Role.MANAGER:
-        tasks = Task.objects.filter(
-            created_by=request.user,
-            is_archived=False,
-            assignments__isnull=False,
-        ).distinct()
+        tasks = list(
+            Task.objects.filter(created_by=request.user, is_archived=False)
+            .prefetch_related("categories")
+        )
     elif profile.role == UserProfile.Role.EMPLOYEE:
-        tasks = Task.objects.filter(
-            assignments__assignee=request.user,
-            assignments__completed_at__isnull=True,
-            is_archived=False,
-        ).distinct()
+        mine = list(
+            Task.objects.filter(
+                assignments__assignee=request.user,
+                assignments__completed_at__isnull=True,
+                is_archived=False,
+            )
+            .distinct()
+            .prefetch_related("categories")
+        )
+        available = [
+            task
+            for task in Task.objects.filter(is_archived=False, completed_at__isnull=True)
+            .exclude(assignments__assignee=request.user)
+            .prefetch_related("categories", "assignments")
+            if not task.is_full and not task.is_finished
+        ]
+        available_ids = {task.pk for task in available}
+        tasks = mine + available
     else:
         raise PermissionDenied
 
@@ -83,11 +96,11 @@ def calendar_events(request):
         category = task.categories.first()
         events.append({
             "id": task.pk,
-            "title": task.title,
+            "title": ("\u2605 " if task.is_priority else "") + task.title,
             "start": task.due_date.isoformat(),
             "allDay": True,
             "color": category.color if category and category.color else "#3788d8",
+            "classNames": ["event-available"] if task.pk in available_ids else [],
             "url": reverse("tasks:task_detail", args=[task.pk]),
-
         })
     return JsonResponse(events, safe=False)

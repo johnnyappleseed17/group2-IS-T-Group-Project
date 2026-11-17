@@ -19,6 +19,7 @@
                     <th scope="col">Categories</th>
                     <th scope="col">People assigned / needed</th>
                     <th scope="col">Status</th>
+                    <th scope="col">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -32,9 +33,9 @@
                               title="{{ task.due_color|capfirst }}"></span>
                       </td>
                     <td>{{ task.description|linebreaksbr }}</td>
-                    <td><time datetime="{{ task.due_date|date:'Y-m-d' }}">{{ task.due_date|date:"Y-m-d" }}</time></td>
+                    <td>{% include "tasks/_due_date.html" %}</td>
                     <td>{% include "tasks/_category_pills.html" with categories=task.categories.all %}</td>
-                    <td>{{ task.claimed_count }} / {{ task.employees_needed }}</td>
+                    <td>{% include "tasks/_progress.html" %}</td>
                     <td>{{ task.status|capfirst }}</td>
                     <td>
                         {% for assignment in task.assignments.all %}
@@ -42,11 +43,11 @@
                                 {% if assignment.completed_at %}
                                     Done
                                 {% else %}
-                                    <form method="post" action="{% url 'tasks:mark_done' task.pk %}" onsubmit="return confirm('Mark this task as done?');">
+                                    <form method="post" action="{% url 'tasks:mark_done' task.pk %}" class="action-form" onsubmit="return confirm('Mark this task as done?');">
                                     {% csrf_token %}
                                     <button type="submit" class="link-btn">Mark as done</button>
                                     </form>
-                                    <form method="post" action="{% url 'tasks:remove_self' task.pk %}" onsubmit="return confirm('Are you certain you want to remove this task?');">
+                                    <form method="post" action="{% url 'tasks:remove_self' task.pk %}" class="action-form" onsubmit="return confirm('Are you certain you want to remove this task?');">
                                     {% csrf_token %}
                                     <button type="submit" class="link-btn">Remove Task</button>
                                     </form>
