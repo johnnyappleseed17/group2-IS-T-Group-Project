@@ -1,0 +1,23 @@
+<form method="get" class="filter-bar" role="search" aria-label="Filter tasks">
+    <div class="filter-field filter-search">
+        <label for="filter-q" class="form-label">Search</label>
+        <input type="search" id="filter-q" name="q" value="{{ q }}" class="form-control" placeholder="Title or description">
+    </div>
+    <div class="filter-field">
+        <label for="filter-category" class="form-label">Category</label>
+        <select id="filter-category" name="category" class="form-select">
+            <option value="">All categories</option>
+            {% for category in all_categories %}
+            <option value="{{ category.pk }}"{% if selected_category == category.pk|stringformat:"s" %} selected{% endif %}>{{ category.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-check filter-priority">
+        <input class="form-check-input" type="checkbox" id="filter-priority" name="priority" value="1"{% if priority_only %} checked{% endif %}>
+        <label class="form-check-label" for="filter-priority">Priority only</label>
+    </div>
+    <div class="filter-actions">
+        <button type="submit" class="btn btn-primary">Filter</button>
+        {% if has_filters %}<a class="btn btn-link" href="?">Clear</a>{% endif %}
+    </div>
+</form>

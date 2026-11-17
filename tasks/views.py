@@ -14,7 +14,7 @@ from django.utils import timezone
 
 
 from .forms import TaskForm
-from .models import Task, TaskAssignment
+from .models import Category, Task, TaskAssignment
 from .reminders import send_due_date_reminders
 
 
@@ -27,6 +27,29 @@ def _require_approved_manager(user):
     if profile.role != UserProfile.Role.MANAGER or not profile.is_approved:
         raise PermissionDenied("An approved manager account is required.")
 
+def _apply_task_filters(request, tasks):
+    query = request.GET.get("q", "").strip()
+    category = request.GET.get("category", "").strip()
+    if query:
+        tasks = tasks.filter(Q(title__icontains=query) | Q(description__icontains=query))
+    if category.isdigit():
+        tasks = tasks.filter(categories__pk=int(category))
+    if request.GET.get("priority") == "1":
+        tasks = tasks.filter(is_priority=True)
+    return tasks.distinct()
+
+
+def _filter_context(request):
+    params = request.GET.copy()
+    params.pop("page", None)
+    return {
+        "q": request.GET.get("q", "").strip(),
+        "selected_category": request.GET.get("category", "").strip(),
+        "priority_only": request.GET.get("priority") == "1",
+        "all_categories": Category.objects.order_by("name"),
+        "filter_query": params.urlencode(),
+        "has_filters": bool(params),
+    }
 
 @login_required
 @require_safe
@@ -37,11 +60,12 @@ def my_created_tasks(request):
         .prefetch_related("categories", "assignments")
         .order_by("-is_priority", "due_date", "pk")
     )
+    tasks = _apply_task_filters(request, tasks)
     page_obj = Paginator(tasks, 10).get_page(request.GET.get("page"))
     return render(
         request,
         "tasks/my_created_tasks.html",
-        {"tasks": page_obj.object_list, "page_obj": page_obj},
+        {"tasks": page_obj.object_list, "page_obj": page_obj, **_filter_context(request)},
     )
 
 
@@ -140,11 +164,12 @@ def my_accepted_tasks(request):
         .prefetch_related("categories", "assignments")
         .order_by("-is_priority", "due_date", "pk")
     )
+    tasks = _apply_task_filters(request, tasks)
     page_obj = Paginator(tasks, 10).get_page(request.GET.get("page"))
     return render(
         request,
         "tasks/my_accepted_tasks.html",
-        {"tasks": page_obj.object_list, "page_obj": page_obj},
+        {"tasks": page_obj.object_list, "page_obj": page_obj, **_filter_context(request)},
     )
 
 @login_required
