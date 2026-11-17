@@ -254,6 +254,10 @@ class TaskDetailView(LoginRequiredMixin, generic.DetailView):
         )
         return context
 
+
+@login_required
+@require_POST
+@transaction.atomic
 def mark_done(request, task_id):
     assignment = get_object_or_404(
         TaskAssignment.objects.select_for_update(),
@@ -269,6 +273,7 @@ def mark_done(request, task_id):
         messages.info(request, "You have already marked this task as done.")
 
     return redirect("tasks:my_accepted_tasks")
+
 
 @login_required
 @require_POST
