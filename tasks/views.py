@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods, require_safe, require_POST
 from django.shortcuts import get_object_or_404, redirect
@@ -36,10 +36,15 @@ def _apply_task_filters(request, tasks):
         tasks = tasks.filter(categories__pk=int(category))
     if request.GET.get("priority") == "1":
         tasks = tasks.filter(is_priority=True)
+    if request.GET.get("hide_finished") == "1":
+        has_any = TaskAssignment.objects.filter(task=OuterRef("pk"))
+        has_open = has_any.filter(completed_at__isnull=True)
+        finished = Q(completed_at__isnull=False) | (Q(Exists(has_any)) & ~Q(Exists(has_open)))
+        tasks = tasks.exclude(finished)
     return tasks.distinct()
 
 
-def _filter_context(request):
+def _filter_context(request, can_hide_finished=False):
     params = request.GET.copy()
     params.pop("page", None)
     return {
@@ -49,6 +54,8 @@ def _filter_context(request):
         "all_categories": Category.objects.order_by("name"),
         "filter_query": params.urlencode(),
         "has_filters": bool(params),
+        "hide_finished": request.GET.get("hide_finished") == "1",
+        "can_hide_finished": can_hide_finished,
     }
 
 @login_required
@@ -65,7 +72,7 @@ def my_created_tasks(request):
     return render(
         request,
         "tasks/my_created_tasks.html",
-        {"tasks": page_obj.object_list, "page_obj": page_obj, **_filter_context(request)},
+        {"tasks": page_obj.object_list, "page_obj": page_obj, **_filter_context(request, can_hide_finished=True)},
     )
 
 

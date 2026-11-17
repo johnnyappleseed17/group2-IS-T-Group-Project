@@ -36,12 +36,12 @@
                               title="{{ task.due_color|capfirst }}"></span>
                       </td>
                     <td>{{ task.description|linebreaksbr }}</td>
-                    <td><time datetime="{{ task.due_date|date:'Y-m-d' }}">{{ task.due_date|date:"Y-m-d" }}</time></td>
+                    <td>{% include "tasks/_due_date.html" %}</td>
                     <td>{% include "tasks/_category_pills.html" with categories=task.categories.all %}</td>
-                    <td>{{ task.claimed_count }} / {{ task.employees_needed }}</td>
+                    <td>{% include "tasks/_progress.html" %}</td>
                     <td>{{ task.status|capfirst }}</td>
                     <td>
-                    <form method="post" action="{% url 'tasks:accept_task' task.id %}">
+                    <form method="post" action="{% url 'tasks:accept_task' task.id %}" class="action-form">
                     {% csrf_token %}
                     <button type="submit">Accept task</button>
                     </form>

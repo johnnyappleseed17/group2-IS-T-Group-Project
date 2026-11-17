@@ -36,7 +36,7 @@
 
 /* main page area */
 .page {
-    max-width: 900px;
+    max-width: 1200px;
     margin: 30px auto;
     padding: 0 20px;
 }
@@ -423,3 +423,30 @@
 .page form.filter-bar .filter-priority { padding-bottom: 8px; }
 .page form.filter-bar .filter-actions { display: flex; align-items: center; gap: 8px; }
 .page form.filter-bar .filter-actions .btn { margin-top: 0; }
+
+/* overdue tag and assignment progress bar */
+.badge-overdue {
+    background-color: #fde8e8;
+    color: #b02a37;
+    border: 1px solid #f1aeb5;
+    font-weight: 600;
+}
+
+.progress-cell { min-width: 120px; }
+.progress-cell .progress { height: 8px;}
+
+/* small action buttons inside table rows (not cards) */
+.page form.action-form {
+    display: inline-block;
+    background: none;
+    box-shadow: none;
+    max-width: none;
+    margin: 0 8px 0 0;
+    padding: 0;
+}
+
+/* calendar: tasks you could still accept */
+.fc .fc-event.event-available {
+    opacity: 0.55;
+    border: 2px dashed #495057;
+}
