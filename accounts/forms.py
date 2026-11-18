@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import PasswordResetForm
-
+from django.contrib.auth import get_user_model
 
 class NotificationEmailForm(forms.Form):
     email = forms.EmailField(
@@ -17,3 +17,9 @@ class UserEmailPasswordResetForm(PasswordResetForm):
         max_length=254,
         help_text="The reset link is sent to this address.",
     )
+class ProfileForm(forms.ModelForm):
+    email = forms.EmailField(label="Email", max_length=254)
+
+    class Meta:
+        model = get_user_model()
+        fields = ["first_name", "last_name", "email"]

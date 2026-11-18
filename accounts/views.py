@@ -7,7 +7,12 @@ from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from django.urls import reverse
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import redirect, render
+from django.views.decorators.http import require_http_methods
 
+from .forms import ProfileForm
 from .forms import NotificationEmailForm
 from .models import UserProfile
 
@@ -104,3 +109,18 @@ def calendar_events(request):
             "url": reverse("tasks:task_detail", args=[task.pk]),
         })
     return JsonResponse(events, safe=False)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def profile(request):
+    form = ProfileForm(request.POST if request.method == "POST" else None, instance=request.user)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Profile updated.")
+        return redirect("profile")
+    return render(
+        request,
+        "accounts/profile.html",
+        {"form": form, "user_profile": getattr(request.user, "profile", None)},
+    )
