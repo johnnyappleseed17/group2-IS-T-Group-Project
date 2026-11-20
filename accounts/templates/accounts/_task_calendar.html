@@ -1,0 +1,53 @@
+<div id="calendar"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const calendarElement = document.getElementById("calendar");
+    const calendar = new FullCalendar.Calendar(calendarElement, {
+      initialView: "dayGridMonth",
+      events: "{% url 'calendar_events' %}",
+      eventDidMount: function (info) {
+        const names = info.event.extendedProps.assignees;
+        let assignedTo = "Unassigned";
+        if (names.length > 0) {
+          // Keep large teams short here. The detail page lists everyone.
+          assignedTo = names.slice(0, 3).join(", ");
+          if (names.length > 3) {
+            assignedTo += " (+" + (names.length - 3) + " more)";
+          }
+        }
+
+        // An all-day event already has the correct due date as text.
+        const preview = [
+          info.event.title,
+          "Due date: " + info.event.startStr,
+          "Assigned to: " + assignedTo
+        ];
+        info.el.title = preview.join("\n");
+        if (window.bootstrap) {
+          new bootstrap.Tooltip(info.el, {
+            trigger: "hover focus",
+            container: "body",
+            customClass: "calendar-task-preview",
+            html: false,
+            animation: false
+          });
+        }
+      },
+      eventWillUnmount: function (info) {
+        // Changing months removes the old links and their previews.
+        window.bootstrap?.Tooltip.getInstance(info.el)?.dispose();
+      }
+    });
+    calendar.render();
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") {
+        for (const link of calendarElement.querySelectorAll(".fc-event[aria-describedby]")) {
+          bootstrap.Tooltip.getInstance(link)?.hide();
+        }
+      }
+    });
+  });
+</script>

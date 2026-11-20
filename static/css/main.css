@@ -450,3 +450,10 @@
     opacity: 0.55;
     border: 2px dashed #495057;
 }
+
+.calendar-task-preview .tooltip-inner {
+    max-width: min(20rem, 90vw);
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+    text-align: left;
+}

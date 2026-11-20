@@ -69,27 +69,25 @@ def calendar_events(request):
     if not profile.is_approved:
         raise PermissionDenied
 
+    # Load names with the tasks so showing a preview needs no extra request.
+    calendar_tasks = Task.objects.filter(is_archived=False).prefetch_related(
+        "categories", "assignments__assignee"
+    )
     available_ids = set()
     if profile.role == UserProfile.Role.MANAGER:
-        tasks = list(
-            Task.objects.filter(created_by=request.user, is_archived=False)
-            .prefetch_related("categories")
-        )
+        tasks = calendar_tasks.filter(created_by=request.user)
     elif profile.role == UserProfile.Role.EMPLOYEE:
         mine = list(
-            Task.objects.filter(
+            calendar_tasks.filter(
                 assignments__assignee=request.user,
                 assignments__completed_at__isnull=True,
-                is_archived=False,
             )
             .distinct()
-            .prefetch_related("categories")
         )
         available = [
             task
-            for task in Task.objects.filter(is_archived=False, completed_at__isnull=True)
+            for task in calendar_tasks.filter(completed_at__isnull=True)
             .exclude(assignments__assignee=request.user)
-            .prefetch_related("categories", "assignments")
             if not task.is_full and not task.is_finished
         ]
         available_ids = {task.pk for task in available}
@@ -100,11 +98,15 @@ def calendar_events(request):
     events = []
     for task in tasks:
         category = task.categories.first()
+        assignees = sorted(
+            assignment.assignee.get_username() for assignment in task.assignments.all()
+        )
         events.append({
             "id": task.pk,
             "title": ("\u2605 " if task.is_priority else "") + task.title,
             "start": task.due_date.isoformat(),
             "allDay": True,
+            "extendedProps": {"assignees": assignees},
             "color": category.color if category and category.color else "#3788d8",
             "classNames": ["event-available"] if task.pk in available_ids else [],
             "url": reverse("tasks:task_detail", args=[task.pk]),

@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from tasks.models import Task, TaskAssignment
+from tasks.models import Category, Task, TaskAssignment
 
 from .models import UserProfile
 
@@ -44,7 +44,8 @@ class CalendarEventsTests(TestCase):
 
     def test_manager_sees_tasks_nobody_has_accepted(self):
         self.make_task("Nobody yet")
-        self.assertIn("Nobody yet", self.events_for(self.boss))
+        event = self.events_for(self.boss)["Nobody yet"]
+        self.assertEqual(event["extendedProps"]["assignees"], [])
 
     def test_manager_does_not_see_other_managers_tasks(self):
         self.make_task("Rival task", owner=self.rival)
@@ -63,6 +64,13 @@ class CalendarEventsTests(TestCase):
         self.make_task("Up for grabs")
         event = self.events_for(self.worker)["Up for grabs"]
         self.assertEqual(event["classNames"], ["event-available"])
+        self.assertEqual(event["extendedProps"]["assignees"], [])
+
+    def test_employee_does_not_see_archived_available_or_accepted_tasks(self):
+        accepted = self.make_task("Archived accepted task", is_archived=True)
+        TaskAssignment.objects.create(task=accepted, assignee=self.worker)
+        self.make_task("Archived available task", is_archived=True)
+        self.assertEqual(self.events_for(self.worker), {})
 
     def test_employee_does_not_see_full_tasks(self):
         task = self.make_task("Taken", needed=1)
@@ -81,3 +89,41 @@ class CalendarEventsTests(TestCase):
         self.client.force_login(self.boss)
         titles = [e["title"] for e in self.client.get(reverse("calendar_events")).json()]
         self.assertIn("\u2605 Urgent", titles)
+
+    def test_preview_assignees_use_usernames_in_sorted_order_for_both_roles(self):
+        self.worker.first_name = "Alice"
+        self.worker.save(update_fields=["first_name"])
+        self.other.first_name = "Zoe"
+        self.other.save(update_fields=["first_name"])
+        task = self.make_task("Shared work", needed=3)
+        # Claim order differs from username order. Completed assignees are still
+        # listed on the detail page and should remain in the preview as well.
+        TaskAssignment.objects.create(task=task, assignee=self.worker)
+        TaskAssignment.objects.create(
+            task=task, assignee=self.other, completed_at=timezone.now()
+        )
+        expected = [self.other.get_username(), self.worker.get_username()]
+        for viewer in (self.boss, self.worker):
+            with self.subTest(viewer=viewer.username):
+                event = self.events_for(viewer)["Shared work"]
+                self.assertEqual(event["extendedProps"]["assignees"], expected)
+                detail = self.client.get(event["url"])
+                self.assertEqual(
+                    sorted(str(assignment.assignee) for assignment in detail.context["assignments"]),
+                    expected,
+                )
+
+    def test_preview_keeps_priority_date_detail_link_and_category_color(self):
+        task = self.make_task("Inventory review", is_priority=True)
+        category = Category.objects.create(name="Inventory", color="#1267ab")
+        task.categories.add(category)
+        for viewer in (self.boss, self.worker):
+            with self.subTest(viewer=viewer.username):
+                event = self.events_for(viewer)["Inventory review"]
+                self.assertEqual(event["id"], task.pk)
+                self.assertEqual(event["title"], "\u2605 Inventory review")
+                self.assertEqual(event["start"], self.due.isoformat())
+                self.assertIs(event["allDay"], True)
+                self.assertEqual(event["url"], reverse("tasks:task_detail", args=[task.pk]))
+                self.assertEqual(event["color"], category.color)
+                self.assertEqual(self.client.get(event["url"]).status_code, 200)
