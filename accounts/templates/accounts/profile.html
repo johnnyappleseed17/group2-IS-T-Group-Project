@@ -12,4 +12,14 @@
   {{ form.as_p }}
   <button type="submit" class="btn btn-primary">Save</button>
 </form>
+<h2>Reset password</h2>
+{% if user.email %}
+<p>A reset link is sent to {{ user.email }}.</p>
+<form method="post" action="{% url 'send_password_reset' %}">
+  {% csrf_token %}
+  <button type="submit" class="btn btn-outline-primary">Email me a reset link</button>
+</form>
+{% else %}
+<p>Save an email address above before requesting a password reset.</p>
+{% endif %}
 {% endblock %}

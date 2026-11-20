@@ -35,6 +35,26 @@ class PasswordResetEmailTests(TestCase):
         self.assertRedirects(response, reverse("password_reset_done"))
         self.assertEqual(len(mail.outbox), 0)
 
+    def test_profile_sends_the_reset_link_to_the_account_email(self):
+        user = User.objects.create_user(
+            username="sam",
+            password="notpassword-123",
+            email="sam@example.com",
+        )
+        self.client.login(username="sam", password="notpassword-123")
+        response = self.client.post(reverse("send_password_reset"))
+        self.assertRedirects(response, reverse("profile"))
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertEqual(mail.outbox[0].to, [user.email])
+        self.assertIn("/accounts/reset/", mail.outbox[0].body)
+
+    def test_profile_without_an_email_does_not_send_a_reset(self):
+        User.objects.create_user(username="sam", password="notpassword-123", email="")
+        self.client.login(username="sam", password="notpassword-123")
+        response = self.client.post(reverse("send_password_reset"))
+        self.assertRedirects(response, reverse("profile"))
+        self.assertEqual(len(mail.outbox), 0)
+
 
 class NotificationEmailTests(TestCase):
     def test_signed_in_user_can_save_the_address_that_receives_reminders(self):

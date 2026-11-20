@@ -9,8 +9,9 @@ from django.views.decorators.http import require_GET
 from django.urls import reverse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import PasswordResetForm
 from django.shortcuts import redirect, render
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
 
 from .forms import ProfileForm
 from .forms import NotificationEmailForm
@@ -124,3 +125,21 @@ def profile(request):
         "accounts/profile.html",
         {"form": form, "user_profile": getattr(request.user, "profile", None)},
     )
+
+
+@login_required
+@require_POST
+def send_password_reset(request):
+    """Email a password reset link to the address saved on this account."""
+    form = PasswordResetForm(data={"email": request.user.email})
+    if not form.is_valid():
+        messages.error(request, "Save a valid email on your profile before requesting a reset.")
+        return redirect("profile")
+    form.save(
+        request=request,
+        use_https=request.is_secure(),
+        email_template_name="registration/password_reset_email.html",
+        subject_template_name="registration/password_reset_subject.txt",
+    )
+    messages.success(request, "A password reset link was sent to your email address.")
+    return redirect("profile")
