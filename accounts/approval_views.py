@@ -67,7 +67,6 @@ def approve_manager(request, application_id):
     application = get_object_or_404(_applications().select_for_update(), pk=application_id)
     profile = application.user.profile
     profile.role = UserProfile.Role.MANAGER
-    profile.manager_requested = False
     profile.is_approved = True
     profile.save()
     _finish(application, request.user, ManagerApplication.Status.APPROVED)
@@ -82,9 +81,6 @@ def decline_manager(request, application_id):
     """No: the applicant stays an employee and sees the note."""
     _require_approved_manager(request.user)
     application = get_object_or_404(_applications().select_for_update(), pk=application_id)
-    profile = application.user.profile
-    profile.manager_requested = False
-    profile.save(update_fields=["manager_requested"])
     note = request.POST.get("note", "").strip()[:300]
     _finish(application, request.user, ManagerApplication.Status.DECLINED, note)
     messages.success(request, f"{application.user.username}'s application was declined.")

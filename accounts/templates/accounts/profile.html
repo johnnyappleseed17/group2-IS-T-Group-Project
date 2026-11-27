@@ -5,7 +5,7 @@
 <p><strong>Username:</strong> {{ user.username }}</p>
 <p>
   <strong>Role:</strong> {{ user_profile.get_role_display }}
-  {% if user_profile.manager_requested %}<span class="badge text-bg-info">Manager request pending</span>{% endif %}
+  {% if user_profile.has_pending_application %}<span class="badge text-bg-info">Manager request pending</span>{% endif %}
 </p>
 {% if user_profile.role == 'employee' %}
 <p><a href="{% url 'apply_manager' %}">Apply to become a manager</a></p>

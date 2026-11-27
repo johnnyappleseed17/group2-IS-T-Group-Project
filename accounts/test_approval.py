@@ -9,11 +9,10 @@ User = get_user_model()
 PASSWORD = "notpassword-123"
 
 
-def make_user(username, role=UserProfile.Role.EMPLOYEE, requested=False):
+def make_user(username, role=UserProfile.Role.EMPLOYEE):
     user = User.objects.create_user(username=username, password=PASSWORD, email="")
-    profile = user.profile # this is created by post_save
+    profile = user.profile  # this is created by post_save
     profile.role = role
-    profile.manager_requested = requested
     profile.save()
     return user
 
@@ -30,17 +29,15 @@ class SignUpTests(TestCase):
         data.update(extra)
         return self.client.post(reverse("register"), data)
 
-    def test_box_ticked_creates_pending_employee(self):
-        self.signup(want_manager="on")
-        profile = User.objects.get(username="newbie").profile
-        self.assertEqual(profile.role, UserProfile.Role.EMPLOYEE)
-        self.assertTrue(profile.manager_requested)
-
-    def test_box_unticked_is_plain_employee(self):
+    def test_signup_makes_a_plain_employee(self):
         self.signup()
         profile = User.objects.get(username="newbie").profile
         self.assertEqual(profile.role, UserProfile.Role.EMPLOYEE)
-        self.assertFalse(profile.manager_requested)
+        self.assertFalse(profile.has_pending_application)
+
+    def test_signup_page_has_no_manager_box(self):
+        response = self.client.get(reverse("register"))
+        self.assertNotContains(response, "want_manager")
 
 
 class ApprovalTests(TestCase):
@@ -105,7 +102,8 @@ class NavbarBadgeTests(TestCase):
         self.assertContains(self.client.get(reverse("dashboard")), "MANAGER")
 
     def test_pending_badge(self):
-        make_user("applicant", requested=True)
+        applicant = make_user("applicant")
+        ManagerApplication.objects.create(user=applicant, reason="Ready")
         self.client.login(username="applicant", password=PASSWORD)
         self.assertContains(
             self.client.get(reverse("dashboard")), "Manager request pending"

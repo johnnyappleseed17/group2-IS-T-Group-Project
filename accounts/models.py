@@ -15,13 +15,15 @@ class UserProfile(models.Model):
     )
     role = models.CharField(max_length=10, choices=Role.choices, default=Role.EMPLOYEE)
     is_approved = models.BooleanField(default=True)
-    manager_requested = models.BooleanField(
-        default=False,
-        help_text="This person asked to become a manager, allow this?",
-    )
 
     def __str__(self):
         return f"{self.user.username} ({self.get_role_display()})"
+
+    @property
+    def has_pending_application(self):
+        return self.user.manager_applications.filter(
+            status=ManagerApplication.Status.PENDING
+        ).exists()
 
 class ManagerApplication(models.Model):
     """An employee's request to become a manager, and what was decided."""
