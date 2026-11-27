@@ -15,7 +15,10 @@ class UserProfile(models.Model):
     )
     role = models.CharField(max_length=10, choices=Role.choices, default=Role.EMPLOYEE)
     is_approved = models.BooleanField(default=True)
-
+    email_reminders = models.BooleanField(
+        default=True,
+        help_text="Send me an email when a task I own or accepted is due soon or overdue.",
+    )
     def __str__(self):
         return f"{self.user.username} ({self.get_role_display()})"
 
