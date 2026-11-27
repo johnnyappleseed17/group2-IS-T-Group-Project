@@ -10,6 +10,7 @@ urlpatterns = [
     path("approvals/", approval_views.pending_managers, name="pending_managers"),
     path("approvals/<int:profile_id>/approve/", approval_views.approve_manager, name="approve_manager"),
     path("approvals/<int:profile_id>/decline/", approval_views.decline_manager, name="decline_manager"),
+    path("managers/<int:profile_id>/remove/", approval_views.demote_manager, name="demote_manager"),
     path('profile/', views.profile, name='profile'),
     path('profile/reset-password/', views.send_password_reset, name='send_password_reset'),
 ]

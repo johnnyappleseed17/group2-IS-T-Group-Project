@@ -25,6 +25,11 @@ def _requests():
         manager_requested=True, role=UserProfile.Role.EMPLOYEE
     ).select_related("user")
 
+def _managers():
+    # Approved managers, the people who can be removed.
+    return UserProfile.objects.filter(
+        role=UserProfile.Role.MANAGER, is_approved=True
+    ).select_related("user")
 
 @login_required
 @require_safe
@@ -34,7 +39,10 @@ def pending_managers(request):
     return render(
         request,
         "accounts/pending_managers.html",
-        {"profiles": _requests().order_by("user__date_joined", "pk")},
+        {
+            "profiles": _requests().order_by("user__date_joined", "pk"),
+            "managers": _managers().order_by("user__username"),
+        },
     )
 
 
@@ -63,4 +71,19 @@ def decline_manager(request, profile_id):
     profile.manager_requested = False
     profile.save(update_fields=["manager_requested"])
     messages.success(request, f"{profile.user.username}'s request was declined.")
+    return redirect("pending_managers")
+
+@login_required
+@require_POST
+@transaction.atomic
+def demote_manager(request, profile_id):
+    """Remove someone's manager role. They go back to being an employee."""
+    _require_approved_manager(request.user)
+    profile = get_object_or_404(_managers().select_for_update(), pk=profile_id)
+    if profile.user_id == request.user.id:
+        messages.error(request, "You can't remove yourself as a manager.")
+        return redirect("pending_managers")
+    profile.role = UserProfile.Role.EMPLOYEE
+    profile.save(update_fields=["role"])
+    messages.success(request, f"{profile.user.username} is no longer a manager.")
     return redirect("pending_managers")
