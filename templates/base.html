@@ -49,7 +49,7 @@
           {% elif user.profile.role == 'employee' %}
             <span class="badge text-bg-secondary">EMPLOYEE</span>
           {% endif %}
-          {% if user.profile.manager_requested %}
+          {% if user.profile.has_pending_application %}
             <span class="badge text-bg-info">Manager request pending</span>
           {% endif %}
         </p>

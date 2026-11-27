@@ -13,9 +13,9 @@ from django.contrib.auth.forms import PasswordResetForm
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods, require_POST
 
-from .forms import ProfileForm
+from .forms import ProfileForm, ManagerApplicationForm
 from .forms import NotificationEmailForm
-from .models import UserProfile
+from .models import ManagerApplication, UserProfile
 
 @login_required
 def dashboard(request):
@@ -145,3 +145,30 @@ def send_password_reset(request):
     )
     messages.success(request, "A password reset link was sent to your email address.")
     return redirect("profile")
+@login_required
+def apply_manager(request):
+    """Employees apply to become a manager and see what happened to their last application."""
+    if request.user.profile.role == UserProfile.Role.MANAGER:
+        messages.info(request, "You are already a manager.")
+        return redirect("dashboard")
+
+    applications = request.user.manager_applications
+    pending = applications.filter(status=ManagerApplication.Status.PENDING).first()
+    last_decision = applications.exclude(status=ManagerApplication.Status.PENDING).first()
+
+    if request.method == "POST" and pending is None:
+        form = ManagerApplicationForm(request.POST)
+        if form.is_valid():
+            application = form.save(commit=False)
+            application.user = request.user
+            application.save()
+            messages.success(request, "Your application was sent to the managers.")
+            return redirect("apply_manager")
+    else:
+        form = ManagerApplicationForm()
+
+    return render(
+        request,
+        "accounts/apply_manager.html",
+        {"form": form, "pending": pending, "last_decision": last_decision},
+    )

@@ -1,12 +1,13 @@
-"""Approving people who asked to become managers."""
+"""Reviewing manager applications and removing managers."""
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_POST, require_safe
 
-from .models import UserProfile
+from .models import ManagerApplication, UserProfile
 
 
 def _require_approved_manager(user):
@@ -19,11 +20,12 @@ def _require_approved_manager(user):
         raise PermissionDenied("You are not approved by a manager")
 
 
-def _requests():
-    # The people who ticked the request box and are still employees.
-    return UserProfile.objects.filter(
-        manager_requested=True, role=UserProfile.Role.EMPLOYEE
+def _applications():
+    # Applications that still wait for a decision.
+    return ManagerApplication.objects.filter(
+        status=ManagerApplication.Status.PENDING
     ).select_related("user")
+
 
 def _managers():
     # Approved managers, the people who can be removed.
@@ -31,16 +33,26 @@ def _managers():
         role=UserProfile.Role.MANAGER, is_approved=True
     ).select_related("user")
 
+
+def _finish(application, reviewer, status, note=""):
+    # Record who decided, when, and the optional note.
+    application.status = status
+    application.reviewed_by = reviewer
+    application.reviewed_at = timezone.now()
+    application.review_note = note
+    application.save()
+
+
 @login_required
 @require_safe
 def pending_managers(request):
-    """The list page: who is asking to become a manager."""
+    """The list page: who applied to become a manager, and who the managers are."""
     _require_approved_manager(request.user)
     return render(
         request,
         "accounts/pending_managers.html",
         {
-            "profiles": _requests().order_by("user__date_joined", "pk"),
+            "applications": _applications().order_by("created_at", "pk"),
             "managers": _managers().order_by("user__username"),
         },
     )
@@ -49,29 +61,31 @@ def pending_managers(request):
 @login_required
 @require_POST
 @transaction.atomic
-def approve_manager(request, profile_id):
-    """Yes: the person becomes a manager."""
+def approve_manager(request, application_id):
+    """Yes: the applicant becomes a manager."""
     _require_approved_manager(request.user)
-    profile = get_object_or_404(_requests().select_for_update(), pk=profile_id)
+    application = get_object_or_404(_applications().select_for_update(), pk=application_id)
+    profile = application.user.profile
     profile.role = UserProfile.Role.MANAGER
-    profile.manager_requested = False
     profile.is_approved = True
     profile.save()
-    messages.success(request, f"{profile.user.username} is now a manager.")
+    _finish(application, request.user, ManagerApplication.Status.APPROVED)
+    messages.success(request, f"{application.user.username} is now a manager.")
     return redirect("pending_managers")
 
 
 @login_required
 @require_POST
 @transaction.atomic
-def decline_manager(request, profile_id):
-    """No: the request is cleared and the person stays an employee."""
+def decline_manager(request, application_id):
+    """No: the applicant stays an employee and sees the note."""
     _require_approved_manager(request.user)
-    profile = get_object_or_404(_requests().select_for_update(), pk=profile_id)
-    profile.manager_requested = False
-    profile.save(update_fields=["manager_requested"])
-    messages.success(request, f"{profile.user.username}'s request was declined.")
+    application = get_object_or_404(_applications().select_for_update(), pk=application_id)
+    note = request.POST.get("note", "").strip()[:300]
+    _finish(application, request.user, ManagerApplication.Status.DECLINED, note)
+    messages.success(request, f"{application.user.username}'s application was declined.")
     return redirect("pending_managers")
+
 
 @login_required
 @require_POST

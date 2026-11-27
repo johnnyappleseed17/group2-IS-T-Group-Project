@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from .models import ManagerApplication, UserProfile
 
 from .models import UserProfile
 
@@ -8,11 +9,10 @@ User = get_user_model()
 PASSWORD = "notpassword-123"
 
 
-def make_user(username, role=UserProfile.Role.EMPLOYEE, requested=False):
+def make_user(username, role=UserProfile.Role.EMPLOYEE):
     user = User.objects.create_user(username=username, password=PASSWORD, email="")
-    profile = user.profile # this is created by post_save
+    profile = user.profile  # this is created by post_save
     profile.role = role
-    profile.manager_requested = requested
     profile.save()
     return user
 
@@ -29,29 +29,31 @@ class SignUpTests(TestCase):
         data.update(extra)
         return self.client.post(reverse("register"), data)
 
-    def test_box_ticked_creates_pending_employee(self):
-        self.signup(want_manager="on")
-        profile = User.objects.get(username="newbie").profile
-        self.assertEqual(profile.role, UserProfile.Role.EMPLOYEE)
-        self.assertTrue(profile.manager_requested)
-
-    def test_box_unticked_is_plain_employee(self):
+    def test_signup_makes_a_plain_employee(self):
         self.signup()
         profile = User.objects.get(username="newbie").profile
         self.assertEqual(profile.role, UserProfile.Role.EMPLOYEE)
-        self.assertFalse(profile.manager_requested)
+        self.assertFalse(profile.has_pending_application)
+
+    def test_signup_page_has_no_manager_box(self):
+        response = self.client.get(reverse("register"))
+        self.assertNotContains(response, "want_manager")
 
 
 class ApprovalTests(TestCase):
     def setUp(self):
         self.manager = make_user("boss", role=UserProfile.Role.MANAGER)
-        self.applicant = make_user("applicant", requested=True)
+        self.applicant = make_user("applicant")
+        self.application = ManagerApplication.objects.create(
+            user=self.applicant, reason="I know the work."
+        )
 
     def test_manager_sees_pending_list(self):
         self.client.login(username="boss", password=PASSWORD)
         response = self.client.get(reverse("pending_managers"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "applicant")
+        self.assertContains(response, "I know the work.")
 
     def test_employee_cannot_see_pending_list(self):
         self.client.login(username="applicant", password=PASSWORD)
@@ -60,32 +62,36 @@ class ApprovalTests(TestCase):
 
     def test_approve_promotes_to_manager(self):
         self.client.login(username="boss", password=PASSWORD)
-        self.client.post(reverse("approve_manager", args=[self.applicant.profile.pk]))
+        self.client.post(reverse("approve_manager", args=[self.application.pk]))
         self.applicant.profile.refresh_from_db()
+        self.application.refresh_from_db()
         self.assertEqual(self.applicant.profile.role, UserProfile.Role.MANAGER)
-        self.assertFalse(self.applicant.profile.manager_requested)
+        self.assertEqual(self.application.status, ManagerApplication.Status.APPROVED)
+        self.assertEqual(self.application.reviewed_by, self.manager)
 
-    def test_decline_keeps_employee(self):
+    def test_decline_keeps_employee_and_saves_the_note(self):
         self.client.login(username="boss", password=PASSWORD)
-        self.client.post(reverse("decline_manager", args=[self.applicant.profile.pk]))
+        self.client.post(
+            reverse("decline_manager", args=[self.application.pk]), {"note": "Not yet"}
+        )
         self.applicant.profile.refresh_from_db()
+        self.application.refresh_from_db()
         self.assertEqual(self.applicant.profile.role, UserProfile.Role.EMPLOYEE)
-        self.assertFalse(self.applicant.profile.manager_requested)
+        self.assertEqual(self.application.status, ManagerApplication.Status.DECLINED)
+        self.assertEqual(self.application.review_note, "Not yet")
 
     def test_employee_cannot_approve_themselves(self):
         self.client.login(username="applicant", password=PASSWORD)
-        response = self.client.post(
-            reverse("approve_manager", args=[self.applicant.profile.pk])
-        )
+        response = self.client.post(reverse("approve_manager", args=[self.application.pk]))
         self.assertEqual(response.status_code, 403)
         self.applicant.profile.refresh_from_db()
+        self.application.refresh_from_db()
         self.assertEqual(self.applicant.profile.role, UserProfile.Role.EMPLOYEE)
+        self.assertEqual(self.application.status, ManagerApplication.Status.PENDING)
 
     def test_approve_requires_post(self):
         self.client.login(username="boss", password=PASSWORD)
-        response = self.client.get(
-            reverse("approve_manager", args=[self.applicant.profile.pk])
-        )
+        response = self.client.get(reverse("approve_manager", args=[self.application.pk]))
         self.assertEqual(response.status_code, 405)
 
 
@@ -96,7 +102,8 @@ class NavbarBadgeTests(TestCase):
         self.assertContains(self.client.get(reverse("dashboard")), "MANAGER")
 
     def test_pending_badge(self):
-        make_user("applicant", requested=True)
+        applicant = make_user("applicant")
+        ManagerApplication.objects.create(user=applicant, reason="Ready")
         self.client.login(username="applicant", password=PASSWORD)
         self.assertContains(
             self.client.get(reverse("dashboard")), "Manager request pending"
