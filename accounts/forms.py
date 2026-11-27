@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth import get_user_model
+from .models import ManagerApplication
 
 class NotificationEmailForm(forms.Form):
     email = forms.EmailField(
@@ -23,3 +24,10 @@ class ProfileForm(forms.ModelForm):
     class Meta:
         model = get_user_model()
         fields = ["first_name", "last_name", "email"]
+
+class ManagerApplicationForm(forms.ModelForm):
+    class Meta:
+        model = ManagerApplication
+        fields = ["reason"]
+        widgets = {"reason": forms.Textarea(attrs={"rows": 5, "class": "form-control"})}
+        labels = {"reason": "Why do you want to be a manager?"}

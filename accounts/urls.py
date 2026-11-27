@@ -13,4 +13,5 @@ urlpatterns = [
     path("managers/<int:profile_id>/remove/", approval_views.demote_manager, name="demote_manager"),
     path('profile/', views.profile, name='profile'),
     path('profile/reset-password/', views.send_password_reset, name='send_password_reset'),
+    path('apply/', views.apply_manager, name='apply_manager'),
 ]

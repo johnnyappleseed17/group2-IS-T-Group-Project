@@ -7,6 +7,9 @@
   <strong>Role:</strong> {{ user_profile.get_role_display }}
   {% if user_profile.manager_requested %}<span class="badge text-bg-info">Manager request pending</span>{% endif %}
 </p>
+{% if user_profile.role == 'employee' %}
+<p><a href="{% url 'apply_manager' %}">Apply to become a manager</a></p>
+{% endif %}
 <form method="post">
   {% csrf_token %}
   {{ form.as_p }}

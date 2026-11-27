@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Apply to be a manager{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Apply to be a manager</h1>
+
+  {% if pending %}
+  <div class="alert alert-info" role="status">
+    <strong>Your application is pending.</strong>
+    You applied on {{ pending.created_at|date:"M j, Y" }}. A manager will review it.
+  </div>
+  <p><strong>Your reason:</strong></p>
+  <blockquote class="border-start ps-3">{{ pending.reason|linebreaksbr }}</blockquote>
+  {% else %}
+  {% if last_decision %}
+  <div class="alert alert-{% if last_decision.status == 'approved' %}success{% else %}warning{% endif %}" role="status">
+    Your last application was <strong>{{ last_decision.get_status_display|lower }}</strong>
+    on {{ last_decision.reviewed_at|date:"M j, Y" }}.
+    {% if last_decision.review_note %}<br>Note from the manager: {{ last_decision.review_note }}{% endif %}
+  </div>
+  {% endif %}
+  <p>Tell the managers why you would be a good fit. They will approve or decline your application.</p>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Send application</button>
+  </form>
+  {% endif %}
+
+  <p class="mt-4"><a href="{% url 'profile' %}">Back to profile</a></p>
+</div>
+{% endblock %}
