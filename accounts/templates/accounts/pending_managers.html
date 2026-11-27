@@ -44,6 +44,39 @@
   {% else %}
   <p>No one is waiting for approval.</p>
   {% endif %}
+
+  <h2 class="mt-5">Current managers</h2>
+  <div class="table-responsive">
+  <table class="table table-striped align-middle">
+    <caption>Everyone who is currently a manager.</caption>
+    <thead>
+      <tr>
+        <th scope="col">Username</th>
+        <th scope="col">Name</th>
+        <th scope="col">Email</th>
+        <th scope="col">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for manager in managers %}
+      <tr>
+        <th scope="row">{{ manager.user.username }}{% if manager.user == request.user %} <span class="badge text-bg-secondary">You</span>{% endif %}</th>
+        <td>{{ manager.user.get_full_name|default:"-" }}</td>
+        <td>{{ manager.user.email|default:"-" }}</td>
+        <td>
+          {% if manager.user != request.user %}
+          <form method="post" action="{% url 'demote_manager' manager.pk %}" class="d-inline" onsubmit="return confirm('Remove {{ manager.user.username|escapejs }} as a manager? They will become an employee.');">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-outline-danger">Remove manager</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
   <p><a href="{% url 'dashboard' %}">Back to dashboard</a></p>
 </div>
 {% endblock %}
