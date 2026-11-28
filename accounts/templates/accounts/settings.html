@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Settings</h1>
+
+  <section class="mt-4" aria-labelledby="account-heading">
+    <h2 id="account-heading" class="h4">Account</h2>
+    <p>
+      <strong>Username:</strong> {{ user.username }}<br>
+      <strong>Role:</strong> {{ user_profile.get_role_display }}<br>
+      <strong>Email:</strong> {{ user.email|default:"Not set" }}
+    </p>
+    <a href="{% url 'profile' %}">Edit name and email</a>
+  </section>
+
+  <section class="mt-4" aria-labelledby="email-heading">
+    <h2 id="email-heading" class="h4">Email reminders</h2>
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-check mb-3">
+        {{ form.email_reminders }}
+        <label class="form-check-label" for="{{ form.email_reminders.id_for_label }}">{{ form.email_reminders.label }}</label>
+        <div class="form-text">{{ form.email_reminders.help_text }}</div>
+      </div>
+      <button type="submit" class="btn btn-primary">Save settings</button>
+    </form>
+  </section>
+
+  <section class="mt-4" aria-labelledby="password-heading">
+    <h2 id="password-heading" class="h4">Password</h2>
+    <a class="btn btn-outline-primary" href="{% url 'password_change' %}">Change password</a>
+  </section>
+</div>
+{% endblock %}

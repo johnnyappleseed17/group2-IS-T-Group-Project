@@ -14,4 +14,5 @@ urlpatterns = [
     path('apply/', views.apply_manager, name='apply_manager'),
     path("approvals/<int:application_id>/approve/", approval_views.approve_manager, name="approve_manager"),
     path("approvals/<int:application_id>/decline/", approval_views.decline_manager, name="decline_manager"),
+    path('settings/', views.account_settings, name='account_settings'),
 ]
