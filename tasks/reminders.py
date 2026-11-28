@@ -178,6 +178,7 @@ def _recipients(task):
     managers = get_user_model().objects.filter(
         profile__role=UserProfile.Role.MANAGER,
         profile__is_approved=True,
+        profile__email_reminders=True,
     )
     employees = []
     for assignment in task.assignments.all():
@@ -188,7 +189,11 @@ def _recipients(task):
             profile = assignee.profile
         except UserProfile.DoesNotExist:
             continue
-        if profile.role == UserProfile.Role.EMPLOYEE and profile.is_approved:
+        if (
+            profile.role == UserProfile.Role.EMPLOYEE
+            and profile.is_approved
+            and profile.email_reminders
+        ):
             employees.append(assignee)
     for person in list(managers) + employees:
         email = _valid_email(person)

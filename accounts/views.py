@@ -13,7 +13,7 @@ from django.contrib.auth.forms import PasswordResetForm
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods, require_POST
 
-from .forms import ProfileForm, ManagerApplicationForm
+from .forms import ProfileForm, ManagerApplicationForm, ReminderSettingsForm
 from .forms import NotificationEmailForm
 from .models import ManagerApplication, UserProfile
 
@@ -171,4 +171,22 @@ def apply_manager(request):
         request,
         "accounts/apply_manager.html",
         {"form": form, "pending": pending, "last_decision": last_decision},
+    )
+
+@login_required
+def account_settings(request):
+    """One place for account options: reminder emails and a link to change the password."""
+    profile = request.user.profile
+    form = ReminderSettingsForm(
+        request.POST if request.method == "POST" else None,
+        instance=profile,
+    )
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Settings saved.")
+        return redirect("account_settings")
+    return render(
+        request,
+        "accounts/settings.html",
+        {"form": form, "user_profile": profile},
     )

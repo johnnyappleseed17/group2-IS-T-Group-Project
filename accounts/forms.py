@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import PasswordResetForm
 from django.contrib.auth import get_user_model
-from .models import ManagerApplication
+from .models import ManagerApplication, UserProfile
 
 class NotificationEmailForm(forms.Form):
     email = forms.EmailField(
@@ -31,3 +31,10 @@ class ManagerApplicationForm(forms.ModelForm):
         fields = ["reason"]
         widgets = {"reason": forms.Textarea(attrs={"rows": 5, "class": "form-control"})}
         labels = {"reason": "Why do you want to be a manager?"}
+
+class ReminderSettingsForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = ["email_reminders"]
+        labels = {"email_reminders": "Send me deadline reminder emails"}
+        widgets = {"email_reminders": forms.CheckboxInput(attrs={"class": "form-check-input"})}
